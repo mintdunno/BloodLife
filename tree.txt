@@ -1,6 +1,4 @@
 com.minh.bloodlife/
-    ├── database/
-    |   └── DatabaseHelper.java
     ├── model/
     |   ├── User.java
     |   ├── DonationSite.java
@@ -37,9 +35,9 @@ com.minh.bloodlife/
     |       ├── DirectionsActivity.java
     |       └── activity_directions.xml
     ├── manager/
-    |   ├── UserManager.java
-    |   ├── SiteManager.java
-    |   ├── RegistrationManager.java
+    |   ├── FirebaseUserManager.java
+    |   ├── FirebaseSiteManager.java
+    |   ├── FirebaseRegistrationManager.java
     |   ├── NotificationManager.java
     |   ├── MapManager.java
     |   ├── ReportGenerator.java
@@ -48,4 +46,4 @@ com.minh.bloodlife/
     |   ├── UserListAdapter.java (if needed)
     |   └── DonationSiteListAdapter.java (if needed)
     └── util/
-        └── ?????
+        └── (Any utility classes  might be created)
