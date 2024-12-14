@@ -32,13 +32,51 @@
             android:textStyle="bold" />
 
         <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/textInputLayoutEmail"
+            android:id="@+id/textInputLayoutFirstName"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@id/textViewAppName"
             android:layout_marginTop="24dp"
-            app:hintTextColor="@color/neutral_gray"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+            app:hintTextColor="@color/neutral_gray">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editTextFirstName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/first_name"
+                android:inputType="textPersonName"
+                android:textColor="@color/dark_gray" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/textInputLayoutLastName"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/textInputLayoutFirstName"
+            android:layout_marginTop="16dp"
+            app:hintTextColor="@color/neutral_gray">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editTextLastName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/last_name"
+                android:inputType="textPersonName"
+                android:textColor="@color/dark_gray" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/textInputLayoutEmail"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/textInputLayoutLastName"
+            android:layout_marginTop="16dp"
+            app:hintTextColor="@color/neutral_gray">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editTextEmail"
@@ -52,13 +90,13 @@
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/textInputLayoutPassword"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@id/textInputLayoutEmail"
             android:layout_marginTop="16dp"
             app:hintTextColor="@color/neutral_gray"
-            app:passwordToggleEnabled="true"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+            app:passwordToggleEnabled="true">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editTextPassword"
@@ -70,24 +108,33 @@
 
         </com.google.android.material.textfield.TextInputLayout>
 
-        <Button
-            android:id="@+id/buttonLogin"
+        <Spinner
+            android:id="@+id/spinnerUserType"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@id/textInputLayoutPassword"
+            android:layout_marginTop="16dp"
+            android:minHeight="48dp"
+            android:entries="@array/user_types" />
+
+        <Button
+            android:id="@+id/buttonRegister"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/spinnerUserType"
             android:layout_marginTop="24dp"
             android:backgroundTint="@color/primary_red"
-            android:text="@string/login"
+            android:text="@string/register"
             android:textColor="@color/white" />
 
         <TextView
-            android:id="@+id/textViewRegister"
+            android:id="@+id/textViewLogin"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@id/buttonLogin"
+            android:layout_below="@id/buttonRegister"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="16dp"
-            android:text="@string/register_here"
+            android:text="@string/already_have_account"
             android:textColor="@color/primary_red" />
 
     </RelativeLayout>

@@ -1,8 +1,18 @@
 <resources>
     <string name="app_name">BloodLife</string>
-    <string name="username">Username</string>
+    <string name="email">Username</string>
     <string name="password">Password</string>
     <string name="login">Login</string>
     <string name="register_here">Don\'t have an account? Register here</string>
     <string name="app_logo">BloodLife</string>
+    <string name="first_name">First Name</string>
+    <string name="last_name">Last Name</string>
+    <string name="register">Register</string>
+    <string name="already_have_account">Already have Account ?</string>
+
+    <string-array name="user_types">
+        <item>Donor</item>
+        <item>Site Manager</item>
+        <item>Super User</item>
+    </string-array>
 </resources>

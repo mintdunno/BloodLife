@@ -1,17 +1,17 @@
 package com.minh.bloodlife.model;
 
 public class User {
-    private int userId;
-    private String username;
-    private String password;
+    private String userId; // You might not need this if you are using Firebase Auth UID
+    private String username; // You might not need this since you are using email for login
+    private String password; // Not needed if using Firebase Auth (it handles passwords)
     private String email;
-    private String userType; // Consider using an enum if you have fixed user types
+    private String userType;
     private String firstName;
     private String lastName;
 
     // Constructor
     public User() {
-        // Default constructor
+        // Default constructor required for calls to DataSnapshot.getValue(User.class)
     }
 
     // Constructor with parameters
@@ -26,11 +26,14 @@ public class User {
 
     // Getters and setters for all fields
 
-    public int getUserId() {
+    // You might want to add @Exclude to methods you don't want to store in Firebase
+    // For example, you wouldn't store the password in the database if using Firebase Auth
+
+    public String getUserId() {
         return userId;
     }
 
-    public void setUserId(int userId) {
+    public void setUserId(String userId) {
         this.userId = userId;
     }
 
@@ -40,14 +43,6 @@ public class User {
 
     public void setUsername(String username) {
         this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public String getEmail() {
