@@ -25,6 +25,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -45,12 +46,12 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     private GoogleMap googleMap;
     private FusedLocationProviderClient fusedLocationClient;
     private Location lastKnownLocation;
-
     private FirebaseFirestore db;
+
 
     private final ActivityResultLauncher<String[]> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), permissions -> {
-                if (permissions.get(Manifest.permission.ACCESS_FINE_LOCATION) && permissions.get(Manifest.permission.ACCESS_COARSE_LOCATION)) {
+                if (Boolean.TRUE.equals(permissions.get(Manifest.permission.ACCESS_FINE_LOCATION)) && Boolean.TRUE.equals(permissions.get(Manifest.permission.ACCESS_COARSE_LOCATION))) {
                     // Both permissions are granted
                     Log.d(TAG, "Location permissions granted");
                     enableMyLocation();
@@ -70,33 +71,11 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         mapView = view.findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
-        db = FirebaseFirestore.getInstance();
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
+        db = FirebaseFirestore.getInstance();
 
         return view;
-    }
-
-    private void fetchDonationSites() {
-        db.collection("donationSites")
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            DonationSite site = document.toObject(DonationSite.class);
-                            if (site.getLocation() != null) {
-                                LatLng siteLatLng = new LatLng(site.getLocation().getLatitude(), site.getLocation().getLongitude());
-                                googleMap.addMarker(new MarkerOptions()
-                                        .position(siteLatLng)
-                                        .title(site.getSiteName())
-                                        .snippet(site.getAddress())); // You can customize the marker snippet
-                            }
-                        }
-                    } else {
-                        Log.w(TAG, "Error getting documents.", task.getException());
-                        Toast.makeText(getContext(), "Failed to load donation sites", Toast.LENGTH_SHORT).show();
-                    }
-                });
     }
 
     @Override
@@ -136,7 +115,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
                     })
                     .addOnFailureListener(e -> {
                         Log.e(TAG, "Exception: " + e.getMessage());
-                        // Handle the error, perhaps using a default location or showing an error message
+                        // Handle the error,  using a default location or showing an error message
                     });
         } else {
             requestLocationPermissions();
@@ -161,6 +140,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
             Log.e(TAG, "Exception: " + e.getMessage());
         }
     }
+
     private void enableMyLocation() {
         if (googleMap == null) {
             return;
@@ -173,6 +153,29 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
             // Request permission or handle the case where it's not granted
             requestLocationPermissions();
         }
+    }
+
+    private void fetchDonationSites() {
+        db.collection("donationSites")
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            DonationSite site = document.toObject(DonationSite.class);
+                            if (site.getLocation() != null) {
+                                LatLng siteLatLng = new LatLng(site.getLocation().getLatitude(), site.getLocation().getLongitude());
+                                googleMap.addMarker(new MarkerOptions()
+                                        .position(siteLatLng)
+                                        .title(site.getSiteName())
+                                        .snippet(site.getAddress())
+                                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.location_pin)));
+                            }
+                        }
+                    } else {
+                        Log.w(TAG, "Error getting documents.", task.getException());
+                        Toast.makeText(getContext(), "Failed to load donation sites", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     @Override

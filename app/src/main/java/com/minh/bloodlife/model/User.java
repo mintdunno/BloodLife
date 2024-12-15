@@ -1,48 +1,32 @@
 package com.minh.bloodlife.model;
 
 public class User {
-    private String userId; // You might not need this if you are using Firebase Auth UID
-    private String username; // You might not need this since you are using email for login
-    private String password; // Not needed if using Firebase Auth (it handles passwords)
-    private String email;
+    private String uid; // Firebase Authentication UID
+    private String email; // Used for login
     private String userType;
     private String firstName;
     private String lastName;
 
-    // Constructor
-    public User() {
-        // Default constructor required for calls to DataSnapshot.getValue(User.class)
-    }
+    // Default constructor (required for Firestore)
+    public User() {}
 
-    // Constructor with parameters
-    public User(String username, String password, String email, String userType, String firstName, String lastName) {
-        this.username = username;
-        this.password = password;
+    // Constructor
+    public User(String uid, String email, String userType, String firstName, String lastName) {
+        this.uid = uid;
         this.email = email;
         this.userType = userType;
         this.firstName = firstName;
         this.lastName = lastName;
     }
 
-    // Getters and setters for all fields
+    // Getters and Setters
 
-    // You might want to add @Exclude to methods you don't want to store in Firebase
-    // For example, you wouldn't store the password in the database if using Firebase Auth
-
-    public String getUserId() {
-        return userId;
+    public String getUid() {
+        return uid;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
+    public void setUid(String uid) {
+        this.uid = uid;
     }
 
     public String getEmail() {
