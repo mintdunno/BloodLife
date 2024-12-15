@@ -1,40 +1,35 @@
 package com.minh.bloodlife.model;
+
+import com.google.firebase.firestore.GeoPoint;
+
 public class DonationSite {
-    private int siteId;
+    private String siteId;
     private String siteName;
     private String address;
-    private double latitude;
-    private double longitude;
+    private GeoPoint location; // Use GeoPoint for storing latitude and longitude
     private String donationHours;
     private String requiredBloodTypes;
-    private int managerId; // Foreign key referencing User.userId
-    private int bloodCollected;
-    private String bloodTypeCollected;
+    private String managerId;
 
-    // Constructor
-    public DonationSite() {
-        // Default constructor
-    }
+    // Default constructor
+    public DonationSite() {}
 
     // Constructor with parameters
-    public DonationSite(String siteName, String address, double latitude, double longitude,
-                        String donationHours, String requiredBloodTypes, int managerId, int bloodCollected, String bloodTypeCollected) {
+    public DonationSite(String siteId, String siteName, String address, GeoPoint location, String donationHours, String requiredBloodTypes, String managerId) {
+        this.siteId = siteId;
         this.siteName = siteName;
         this.address = address;
-        this.latitude = latitude;
-        this.longitude = longitude;
+        this.location = location;
         this.donationHours = donationHours;
         this.requiredBloodTypes = requiredBloodTypes;
         this.managerId = managerId;
-        this.bloodCollected = bloodCollected;
-        this.bloodTypeCollected = bloodTypeCollected;
     }
 
-    public int getSiteId() {
+    public String getSiteId() {
         return siteId;
     }
 
-    public void setSiteId(int siteId) {
+    public void setSiteId(String siteId) {
         this.siteId = siteId;
     }
 
@@ -54,20 +49,12 @@ public class DonationSite {
         this.address = address;
     }
 
-    public double getLatitude() {
-        return latitude;
+    public GeoPoint getLocation() {
+        return location;
     }
 
-    public void setLatitude(double latitude) {
-        this.latitude = latitude;
-    }
-
-    public double getLongitude() {
-        return longitude;
-    }
-
-    public void setLongitude(double longitude) {
-        this.longitude = longitude;
+    public void setLocation(GeoPoint location) {
+        this.location = location;
     }
 
     public String getDonationHours() {
@@ -86,27 +73,11 @@ public class DonationSite {
         this.requiredBloodTypes = requiredBloodTypes;
     }
 
-    public int getManagerId() {
+    public String getManagerId() {
         return managerId;
     }
 
-    public void setManagerId(int managerId) {
+    public void setManagerId(String managerId) {
         this.managerId = managerId;
-    }
-
-    public int getBloodCollected() {
-        return bloodCollected;
-    }
-
-    public void setBloodCollected(int bloodCollected) {
-        this.bloodCollected = bloodCollected;
-    }
-
-    public String getBloodTypeCollected() {
-        return bloodTypeCollected;
-    }
-
-    public void setBloodTypeCollected(String bloodTypeCollected) {
-        this.bloodTypeCollected = bloodTypeCollected;
     }
 }

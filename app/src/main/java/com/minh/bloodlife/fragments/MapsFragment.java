@@ -35,17 +35,20 @@ import com.minh.bloodlife.activities.LoginActivity;
 public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
     private static final String TAG = "MapsFragment";
-    private static final int REQUEST_LOCATION_PERMISSION = 1;
+    private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
+    private static final float DEFAULT_ZOOM = 15f;
 
     private MapView mapView;
     private GoogleMap googleMap;
     private FusedLocationProviderClient fusedLocationClient;
+    private Location lastKnownLocation;
 
     private final ActivityResultLauncher<String[]> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), permissions -> {
                 if (permissions.get(Manifest.permission.ACCESS_FINE_LOCATION) && permissions.get(Manifest.permission.ACCESS_COARSE_LOCATION)) {
                     // Both permissions are granted
                     Log.d(TAG, "Location permissions granted");
+                    enableMyLocation();
                     getMyLastLocation();
                 } else {
                     // Explain to the user that the feature is unavailable because the
@@ -72,16 +75,11 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     public void onMapReady(GoogleMap map) {
         googleMap = map;
 
-        // Check for location permissions
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                && ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            // You have permissions, enable location on the map
-            googleMap.setMyLocationEnabled(true);
-            getMyLastLocation();
-        } else {
-            // Request permissions
-            requestLocationPermissions();
-        }
+        // Turn on the My Location layer and the related control on the map.
+        updateLocationUI();
+
+        // Get the current location of the device and set the map's camera position.
+        getMyLastLocation();
     }
 
     private void requestLocationPermissions() {
@@ -92,32 +90,58 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private void getMyLastLocation() {
-        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.getLastLocation()
+                    .addOnSuccessListener(location -> {
+                        if (location != null) {
+                            lastKnownLocation = location;
+                            Log.d(TAG, "Last known location: " + lastKnownLocation);
+                            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                                    new LatLng(location.getLatitude(), location.getLongitude()), DEFAULT_ZOOM));
+                        } else {
+                            Log.d(TAG, "Current location is null. Using defaults.");
+                            // Use a default location or handle the null case appropriately
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG, "Exception: " + e.getMessage());
+                        // Handle the error, perhaps using a default location or showing an error message
+                    });
+        } else {
+            requestLocationPermissions();
+        }
+    }
+
+    private void updateLocationUI() {
+        if (googleMap == null) {
             return;
         }
-        Task<Location> locationResult = fusedLocationClient.getLastLocation();
-        locationResult.addOnCompleteListener(requireActivity(), task -> {
-            if (task.isSuccessful()) {
-                // Set the map's camera position to the current location of the device.
-                Location lastKnownLocation = task.getResult();
-                if (lastKnownLocation != null) {
-                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                            new LatLng(lastKnownLocation.getLatitude(),
-                                    lastKnownLocation.getLongitude()), 15)); // You can adjust the zoom level (e.g., 15)
-                }
+        try {
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED) {
+                googleMap.setMyLocationEnabled(true);
+                googleMap.getUiSettings().setMyLocationButtonEnabled(true);
             } else {
-                Log.d(TAG, "Current location is null. Using defaults.");
-                Log.e(TAG, "Exception: %s", task.getException());
-                // Optionally, set a default location or handle the error
+                googleMap.setMyLocationEnabled(false);
+                googleMap.getUiSettings().setMyLocationButtonEnabled(false);
+                requestLocationPermissions();
             }
-        });
+        } catch (SecurityException e) {
+            Log.e(TAG, "Exception: " + e.getMessage());
+        }
+    }
+    private void enableMyLocation() {
+        if (googleMap == null) {
+            return;
+        }
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+            googleMap.setMyLocationEnabled(true);
+            googleMap.getUiSettings().setMyLocationButtonEnabled(true); // Enable the button
+        } else {
+            // Request permission or handle the case where it's not granted
+            requestLocationPermissions();
+        }
     }
 
     @Override
