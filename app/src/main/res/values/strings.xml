@@ -22,5 +22,6 @@
     <string name="search">Search</string>
     <string name="profile">Profile</string>
     <string name="logout">Load Out</string>
+    <string name="search_hint">Search for donation sites</string>
 
 </resources>
