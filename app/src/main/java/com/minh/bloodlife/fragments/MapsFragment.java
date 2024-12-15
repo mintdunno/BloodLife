@@ -1,8 +1,6 @@
 package com.minh.bloodlife.fragments;
 
 import android.Manifest;
-import android.app.Activity;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -28,12 +26,14 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.minh.bloodlife.R;
-import com.minh.bloodlife.activities.LoginActivity;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
+import com.minh.bloodlife.R;
 import com.minh.bloodlife.model.DonationSite;
 
 public class MapsFragment extends Fragment implements OnMapReadyCallback {
@@ -48,10 +48,11 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     private Location lastKnownLocation;
     private FirebaseFirestore db;
 
+    // ... other variables
 
     private final ActivityResultLauncher<String[]> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), permissions -> {
-                if (Boolean.TRUE.equals(permissions.get(Manifest.permission.ACCESS_FINE_LOCATION)) && Boolean.TRUE.equals(permissions.get(Manifest.permission.ACCESS_COARSE_LOCATION))) {
+                if (permissions.get(Manifest.permission.ACCESS_FINE_LOCATION) && permissions.get(Manifest.permission.ACCESS_COARSE_LOCATION)) {
                     // Both permissions are granted
                     Log.d(TAG, "Location permissions granted");
                     enableMyLocation();
@@ -115,7 +116,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
                     })
                     .addOnFailureListener(e -> {
                         Log.e(TAG, "Exception: " + e.getMessage());
-                        // Handle the error,  using a default location or showing an error message
+                        // Handle the error, perhaps using a default location or showing an error message
                     });
         } else {
             requestLocationPermissions();
