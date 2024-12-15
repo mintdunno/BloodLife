@@ -13,19 +13,29 @@
         android:roundIcon="@mipmap/blood_drop_logo_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.BloodLife">
-
-        <activity android:name=".activities.LoginActivity" android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity android:name=".activities.RegistrationActivity" android:exported="true" />
-        <activity android:name=".activities.MainActivity" android:exported="false" />
+        <activity
+            android:name=".fragments.ProfileFragment"
+            android:exported="false" />
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyAmYG0ewlmb4zaJAkC6pBsFjqi0NBQu-Po" />
+            android:value="YOUR_API_KEY" />
+
+        <activity
+            android:name=".activities.LoginActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".activities.MainActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.RegistrationActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

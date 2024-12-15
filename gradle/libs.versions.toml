@@ -10,6 +10,7 @@ activity = "1.9.3"
 constraintlayout = "2.2.0"
 materialVersion = "1.9.0"
 playServicesMaps = "19.0.0"
+playServicesMapsVersion = "18.2.0"
 
 [libraries]
 firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
@@ -26,6 +27,7 @@ activity = { group = "androidx.activity", name = "activity", version.ref = "acti
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 material-v190 = { module = "com.google.android.material:material", version.ref = "materialVersion" }
 play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "playServicesMaps" }
+play-services-maps-v1820 = { module = "com.google.android.gms:play-services-maps", version.ref = "playServicesMapsVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

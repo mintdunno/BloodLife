@@ -43,7 +43,7 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
 
     implementation(libs.material.v190)
-    implementation(libs.firebase.bom)
+    implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     // Firebase Authentication
     implementation(libs.firebase.auth)
