@@ -88,6 +88,7 @@ public class RegistrationActivity extends AppCompatActivity {
     }
 
     private void registerUser(String firstName, String lastName, String email, String password, String userType) {
+        Log.d(TAG, "registerUser: " + email + ", " + password); // Log the email and password
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
@@ -104,14 +105,13 @@ public class RegistrationActivity extends AppCompatActivity {
 
                         } else {
                             // If sign in fails, display a message to the user.
-                            Log.w(TAG, "createUserWithEmail:failure", task.getException());
+                            Log.w(TAG, "createUserWithEmail:failure", task.getException()); // Log the exception
                             Toast.makeText(RegistrationActivity.this, "Authentication failed.",
                                     Toast.LENGTH_SHORT).show();
                         }
                     }
                 });
     }
-
     private boolean validateInputs(String firstName, String lastName, String email, String password) {
         textInputLayoutFirstName = findViewById(R.id.textInputLayoutFirstName);
         textInputLayoutLastName = findViewById(R.id.textInputLayoutLastName);
@@ -157,6 +157,7 @@ public class RegistrationActivity extends AppCompatActivity {
     }
 
     private void saveUserToDatabase(String userId, String firstName, String lastName, String email, String userType) {
+        Log.d(TAG, "saveUserToDatabase: userId=" + userId); // Log the user ID
         User user = new User(email, null, email, userType, firstName, lastName);
 
         mDatabase.child("users").child(userId).setValue(user)
@@ -168,7 +169,7 @@ public class RegistrationActivity extends AppCompatActivity {
                             // Update UI or navigate to the next activity
                             updateUI(mAuth.getCurrentUser());
                         } else {
-                            Log.e(TAG, "Failed to save user data", task.getException());
+                            Log.e(TAG, "Failed to save user data", task.getException()); // Log the exception
                             Toast.makeText(RegistrationActivity.this, "Failed to save user data.",
                                     Toast.LENGTH_SHORT).show();
                         }
