@@ -67,7 +67,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         super.onLowMemory();
         mapView.onLowMemory();
     }
-
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);

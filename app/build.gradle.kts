@@ -53,4 +53,5 @@ dependencies {
     implementation(libs.firebase.firestore)
     // Map
     implementation(libs.play.services.maps)
+    implementation(libs.play.services.maps)
 }
