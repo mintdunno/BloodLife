@@ -43,6 +43,7 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
     implementation("com.google.android.material:material:1.9.0")
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-analytics")
     // Firebase Authentication
     implementation("com.google.firebase:firebase-auth")
     // Firebase Realtime Database
