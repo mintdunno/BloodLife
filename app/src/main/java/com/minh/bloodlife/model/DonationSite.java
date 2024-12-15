@@ -14,9 +14,8 @@ public class DonationSite {
     // Default constructor
     public DonationSite() {}
 
-    // Constructor with parameters
-    public DonationSite(String siteId, String siteName, String address, GeoPoint location, String donationHours, String requiredBloodTypes, String managerId) {
-        this.siteId = siteId;
+    // Constructor
+    public DonationSite(String siteName, String address, GeoPoint location, String donationHours, String requiredBloodTypes, String managerId) {
         this.siteName = siteName;
         this.address = address;
         this.location = location;

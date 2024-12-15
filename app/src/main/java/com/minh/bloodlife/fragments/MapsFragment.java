@@ -16,6 +16,7 @@ import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -25,6 +26,7 @@ import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -36,7 +38,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.minh.bloodlife.R;
 import com.minh.bloodlife.model.DonationSite;
 
-public class MapsFragment extends Fragment implements OnMapReadyCallback {
+public class MapsFragment extends Fragment implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
     private static final String TAG = "MapsFragment";
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
@@ -91,6 +93,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
         // Fetch and display donation sites
         fetchDonationSites();
+
+        // Set a marker click listener
+        googleMap.setOnMarkerClickListener(this);
     }
 
     private void requestLocationPermissions() {
@@ -163,13 +168,19 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
                     if (task.isSuccessful()) {
                         for (QueryDocumentSnapshot document : task.getResult()) {
                             DonationSite site = document.toObject(DonationSite.class);
+                            // Set the document ID as the site ID
+                            String siteId = document.getId();
+                            site.setSiteId(document.getId());
                             if (site.getLocation() != null) {
                                 LatLng siteLatLng = new LatLng(site.getLocation().getLatitude(), site.getLocation().getLongitude());
-                                googleMap.addMarker(new MarkerOptions()
+                                Marker marker = googleMap.addMarker(new MarkerOptions()
                                         .position(siteLatLng)
                                         .title(site.getSiteName())
                                         .snippet(site.getAddress())
                                         .icon(BitmapDescriptorFactory.fromResource(R.drawable.location_pin)));
+                                if (marker != null) {
+                                    marker.setTag(siteId); // Associate the site ID with the marker
+                                }
                             }
                         }
                     } else {
@@ -179,6 +190,23 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
                 });
     }
 
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        // Retrieve the site ID associated with the marker
+        String siteId = (String) marker.getTag();
+        if (siteId != null) {
+            // Create a new instance of SiteDetailsFragment and pass the site ID
+            SiteDetailsFragment siteDetailsFragment = SiteDetailsFragment.newInstance(siteId);
+
+            // Replace the current fragment with SiteDetailsFragment
+            FragmentTransaction transaction = requireActivity().getSupportFragmentManager().beginTransaction();
+            transaction.replace(R.id.fragmentContainer, siteDetailsFragment);
+            transaction.addToBackStack(null); // Optional: Add to back stack for navigation
+            transaction.commit();
+        }
+
+        return true;
+    }
     @Override
     public void onResume() {
         super.onResume();
