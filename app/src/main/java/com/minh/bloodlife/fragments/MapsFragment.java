@@ -31,6 +31,9 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.minh.bloodlife.R;
 import com.minh.bloodlife.activities.LoginActivity;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.minh.bloodlife.model.DonationSite;
 
 public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
@@ -42,6 +45,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     private GoogleMap googleMap;
     private FusedLocationProviderClient fusedLocationClient;
     private Location lastKnownLocation;
+
+    private FirebaseFirestore db;
 
     private final ActivityResultLauncher<String[]> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), permissions -> {
@@ -65,10 +70,33 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         mapView = view.findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
+        db = FirebaseFirestore.getInstance();
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
 
         return view;
+    }
+
+    private void fetchDonationSites() {
+        db.collection("donationSites")
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            DonationSite site = document.toObject(DonationSite.class);
+                            if (site.getLocation() != null) {
+                                LatLng siteLatLng = new LatLng(site.getLocation().getLatitude(), site.getLocation().getLongitude());
+                                googleMap.addMarker(new MarkerOptions()
+                                        .position(siteLatLng)
+                                        .title(site.getSiteName())
+                                        .snippet(site.getAddress())); // You can customize the marker snippet
+                            }
+                        }
+                    } else {
+                        Log.w(TAG, "Error getting documents.", task.getException());
+                        Toast.makeText(getContext(), "Failed to load donation sites", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     @Override
@@ -80,6 +108,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
         // Get the current location of the device and set the map's camera position.
         getMyLastLocation();
+
+        // Fetch and display donation sites
+        fetchDonationSites();
     }
 
     private void requestLocationPermissions() {
