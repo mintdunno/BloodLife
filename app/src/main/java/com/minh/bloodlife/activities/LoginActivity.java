@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
+import com.minh.bloodlife.activities.MainActivity;
 import com.minh.bloodlife.R;
 
 public class LoginActivity extends AppCompatActivity {

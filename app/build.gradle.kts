@@ -41,11 +41,16 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
-    implementation("com.google.android.material:material:1.9.0")
-    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
-    implementation("com.google.firebase:firebase-analytics")
+
+    implementation(libs.material.v190)
+    implementation(libs.firebase.bom)
+    implementation(libs.firebase.analytics)
     // Firebase Authentication
-    implementation("com.google.firebase:firebase-auth")
+    implementation(libs.firebase.auth)
     // Firebase Realtime Database
-    implementation("com.google.firebase:firebase-database")
+    implementation(libs.firebase.database)
+    // FireStore
+    implementation(libs.firebase.firestore)
+    // Map
+    implementation(libs.play.services.maps)
 }
