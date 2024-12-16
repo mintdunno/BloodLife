@@ -209,6 +209,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
         return "Required: " + String.join(", ", bloodTypes);
     }
 
+    // In MapsFragment.java
     @Override
     public boolean onMarkerClick(Marker marker) {
         // Retrieve the site ID associated with the marker
@@ -217,14 +218,14 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
             // Create a new instance of SiteDetailsFragment and pass the site ID
             SiteDetailsFragment siteDetailsFragment = SiteDetailsFragment.newInstance(siteId);
 
-            // Replace the current fragment with SiteDetailsFragment
+            // Replace the current fragment with SiteDetailsFragment using FragmentTransaction
             FragmentTransaction transaction = requireActivity().getSupportFragmentManager().beginTransaction();
             transaction.replace(R.id.fragmentContainer, siteDetailsFragment);
-            transaction.addToBackStack(null); // Optional: Add to back stack for navigation
+            transaction.addToBackStack(null); // Add transaction to the back stack
             transaction.commit();
         }
 
-        return true; // Return true to indicate that we have consumed the event
+        return true; // Return true to indicate that the event has been consumed
     }
 
     @Override

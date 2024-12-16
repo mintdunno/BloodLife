@@ -112,14 +112,14 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.menu_logout) {
-            signOut();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
+//    @Override
+//    public boolean onOptionsItemSelected(MenuItem item) {
+//        if (item.getItemId() == R.id.menu_logout) {
+//            signOut();
+//            return true;
+//        }
+//        return super.onOptionsItemSelected(item);
+//    }
 
     private void signOut() {
         mAuth.signOut();
@@ -136,7 +136,25 @@ public class MainActivity extends AppCompatActivity {
             return null;
         }
     }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle the back button behavior
+        if (item.getItemId() == android.R.id.home) {
+            if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
+                getSupportFragmentManager().popBackStack();
+            } else {
+                finish(); // Or some other behavior to exit the app
+            }
+            return true;
+        }
+        // Handle the logout option
+        else if (item.getItemId() == R.id.menu_logout) {
+            signOut();
+            return true;
+        }
 
+        return super.onOptionsItemSelected(item);
+    }
 //    private void updateNavigationBar(String userType) {
 //        Menu menu = bottomNavigationView.getMenu();
     // Example: Only show 'Create Site' if the user is a Site Manager

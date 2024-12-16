@@ -126,7 +126,7 @@ public class SearchFragment extends Fragment {
     }
 
     private void performSearch(String query) {
-        MapsFragment mapsFragment = ((MainActivity) getActivity()).getMapsFragment();
+        MapsFragment mapsFragment = (MapsFragment) requireActivity().getSupportFragmentManager().findFragmentByTag("MapsFragment");
         Location userLocation = mapsFragment != null ? mapsFragment.getLastKnownLocation() : null;
 
         List<String> selectedBloodTypes = getSelectedBloodTypes();
