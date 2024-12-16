@@ -58,6 +58,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="O" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipNearMe"
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Near Me" />
 
         </com.google.android.material.chip.ChipGroup>
 

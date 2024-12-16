@@ -139,4 +139,13 @@ public class MainActivity extends AppCompatActivity {
 //            createSiteItem.setVisible("siteManager".equals(userType));
 //        }
     }
+
+    public MapsFragment getMapsFragment() {
+        Fragment mapsFragment = getSupportFragmentManager().findFragmentById(R.id.fragmentContainer);
+        if (mapsFragment instanceof MapsFragment) {
+            return (MapsFragment) mapsFragment;
+        } else {
+            return null;
+        }
+    }
 }

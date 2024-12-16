@@ -1,5 +1,8 @@
 package com.minh.bloodlife.fragments;
 
+import static android.content.ContentValues.TAG;
+
+import android.location.Location;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -21,9 +24,11 @@ import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.minh.bloodlife.R;
+import com.minh.bloodlife.activities.MainActivity;
 import com.minh.bloodlife.adapter.DonationSiteAdapter;
 import com.minh.bloodlife.model.DonationSite;
 
@@ -85,37 +90,58 @@ public class SearchFragment extends Fragment {
     }
 
     private void performSearch(String query) {
+        MapsFragment mapsFragment = ((MainActivity) getActivity()).getMapsFragment();
+        Location userLocation = mapsFragment != null ? mapsFragment.getLastKnownLocation() : null;
+
         List<String> selectedBloodTypes = getSelectedBloodTypes();
+        boolean isNearMeSelected = filterChipGroup.getCheckedChipIds().contains(R.id.chipNearMe);
 
-        // Create a Firestore query reference
-        com.google.firebase.firestore.Query queryRef = db.collection("donationSites");
+        com.google.firebase.firestore.Query firestoreQuery = db.collection("donationSites");
 
-        // If there's a search query, filter by site name
+        // Apply the site name filter if the query is not empty
         if (!query.isEmpty()) {
-            // Convert query to lowercase for case-insensitive matching
-            String queryLower = query.toLowerCase();
-
-            // Use whereArrayContains for partial matching (if needed)
-            queryRef = queryRef.whereGreaterThanOrEqualTo("searchableName", queryLower)
-                    .whereLessThanOrEqualTo("searchableName", queryLower + "\uf8ff");
+            firestoreQuery = firestoreQuery.whereGreaterThanOrEqualTo("searchableName", query.toLowerCase())
+                    .whereLessThanOrEqualTo("searchableName", query.toLowerCase() + "\uf8ff");
         }
 
-        // If there are selected blood types, filter by them
+        // Apply blood type filter if there are selected blood types
         if (!selectedBloodTypes.isEmpty()) {
-            queryRef = queryRef.whereIn("requiredBloodTypes", selectedBloodTypes);
+            firestoreQuery = firestoreQuery.whereArrayContainsAny("requiredBloodTypes", selectedBloodTypes);
+        }
+
+        // Apply "Near Me" filter if selected and user location is available
+        if (isNearMeSelected && userLocation != null) {
+            // Convert user's location to GeoPoint
+            GeoPoint geoPoint = new GeoPoint(userLocation.getLatitude(), userLocation.getLongitude());
+
+            // Bounding box calculation (approximation for simplicity)
+            double radius = 20; // Radius in kilometers
+            double lat = geoPoint.getLatitude();
+            double lon = geoPoint.getLongitude();
+
+            double latOffset = radius / 111.12; // Approximate km to degrees latitude
+            double lonOffset = radius / (111.12 * Math.cos(Math.toRadians(lat)));
+
+            GeoPoint southWest = new GeoPoint(lat - latOffset, lon - lonOffset);
+            GeoPoint northEast = new GeoPoint(lat + latOffset, lon + lonOffset);
+
+            firestoreQuery = firestoreQuery
+                    .whereGreaterThanOrEqualTo("location", southWest)
+                    .whereLessThanOrEqualTo("location", northEast);
         }
 
         // Execute the query
-        queryRef.get().addOnCompleteListener(task -> {
+        firestoreQuery.get().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 siteList.clear();
                 for (QueryDocumentSnapshot document : task.getResult()) {
                     DonationSite site = document.toObject(DonationSite.class);
+                    site.setSiteId(document.getId());
                     siteList.add(site);
                 }
                 adapter.notifyDataSetChanged();
             } else {
-                Log.w("SearchFragment", "Error getting documents.", task.getException());
+                Log.w(TAG, "Error getting documents.", task.getException());
                 Toast.makeText(getContext(), "Search failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
             }
         });

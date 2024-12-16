@@ -126,6 +126,10 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
         }
     }
 
+    public Location getLastKnownLocation() {
+        return lastKnownLocation;
+    }
+
     private void updateLocationUI() {
         if (googleMap == null) {
             return;
