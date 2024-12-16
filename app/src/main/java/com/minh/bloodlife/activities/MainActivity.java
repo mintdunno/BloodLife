@@ -3,10 +3,14 @@ package com.minh.bloodlife.activities;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
@@ -64,6 +68,25 @@ public class MainActivity extends AppCompatActivity {
                     .replace(R.id.fragmentContainer, new MapsFragment())
                     .commit();
         }
+        // Set the custom ActionBar title view
+        centerActionBarTitle();
+    }
+
+    private void centerActionBarTitle() {
+        getSupportActionBar().setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
+        View customView = getLayoutInflater().inflate(R.layout.action_bar_title, null);
+
+        // Set the title text if you want to change it dynamically
+        TextView title = customView.findViewById(R.id.action_bar_title);
+        title.setText("BloodLife");
+
+        ActionBar.LayoutParams layoutParams = new ActionBar.LayoutParams(
+                ActionBar.LayoutParams.WRAP_CONTENT,
+                ActionBar.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER
+        );
+
+        getSupportActionBar().setCustomView(customView, layoutParams);
     }
 
     @Override
