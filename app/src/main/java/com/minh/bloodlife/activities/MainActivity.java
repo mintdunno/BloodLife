@@ -73,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void centerActionBarTitle() {
-        getSupportActionBar().setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
+        getSupportActionBar().setDisplayOptions(androidx.appcompat.app.ActionBar.DISPLAY_SHOW_CUSTOM);
         View customView = getLayoutInflater().inflate(R.layout.action_bar_title, null);
 
         // Set the title text if you want to change it dynamically
@@ -97,31 +97,6 @@ public class MainActivity extends AppCompatActivity {
         if (currentUser == null) {
             // No user is signed in, redirect to LoginActivity
             redirectToLogin();
-        } else {
-            // User is signed in, check custom claims
-            currentUser.getIdToken(true)
-                    .addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
-                        public void onComplete(@NonNull Task<GetTokenResult> task) {
-                            if (task.isSuccessful()) {
-                                String idToken = task.getResult().getToken();
-                                Log.d(TAG, "User token: " + idToken);
-                                // Send token to your backend via HTTPS
-                                // ...
-                                String userType = (String) task.getResult().getClaims().get("userType");
-                                if (userType != null) {
-                                    Log.d(TAG, "User type: " + userType);
-                                    // Update UI based on user type
-                                    updateNavigationBar(userType);
-                                } else {
-                                    Log.e(TAG, "User type is null");
-                                    // Handle null user type, perhaps redirect to login or show an error
-                                }
-                            } else {
-                                // Handle error
-                                Log.e(TAG, "Error getting ID token", task.getException());
-                            }
-                        }
-                    });
         }
     }
 
@@ -153,16 +128,6 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
         finish(); // Close MainActivity
     }
-
-    private void updateNavigationBar(String userType) {
-        Menu menu = bottomNavigationView.getMenu();
-        // Example: Only show 'Create Site' if the user is a Site Manager
-//        MenuItem createSiteItem = menu.findItem(R.id.menu_create_site);
-//        if (createSiteItem != null) {
-//            createSiteItem.setVisible("siteManager".equals(userType));
-//        }
-    }
-
     public MapsFragment getMapsFragment() {
         Fragment mapsFragment = getSupportFragmentManager().findFragmentById(R.id.fragmentContainer);
         if (mapsFragment instanceof MapsFragment) {
@@ -171,4 +136,13 @@ public class MainActivity extends AppCompatActivity {
             return null;
         }
     }
+
+//    private void updateNavigationBar(String userType) {
+//        Menu menu = bottomNavigationView.getMenu();
+    // Example: Only show 'Create Site' if the user is a Site Manager
+//        MenuItem createSiteItem = menu.findItem(R.id.menu_create_site);
+//        if (createSiteItem != null) {
+//            createSiteItem.setVisible("siteManager".equals(userType));
+//        }
+//    }
 }

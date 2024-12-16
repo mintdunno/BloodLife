@@ -23,5 +23,10 @@
     <string name="profile">Profile</string>
     <string name="logout">Load Out</string>
     <string name="search_hint">Search for donation sites</string>
+    <string name="site_name">Site Name</string>
+    <string name="site_address">Site Address</string>
+    <string name="donation_hours">Donation Hours</string>
+    <string name="required_blood_types">Required Blood Types</string>
+    <string name="create_site">Create Site</string>
 
 </resources>

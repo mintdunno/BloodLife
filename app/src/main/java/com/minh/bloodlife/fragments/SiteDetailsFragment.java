@@ -7,6 +7,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
+import android.widget.Button;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -23,10 +25,12 @@ import java.util.List;
 
 public class SiteDetailsFragment extends Fragment {
 
+    private static final String TAG = "SiteDetailsFragment";
     private static final String ARG_SITE_ID = "siteId";
 
     private String siteId;
     private TextView siteNameTextView, siteAddressTextView, siteHoursTextView, requiredBloodTypesTextView;
+    private View view;
 
     public static SiteDetailsFragment newInstance(String siteId) {
         SiteDetailsFragment fragment = new SiteDetailsFragment();
@@ -43,19 +47,11 @@ public class SiteDetailsFragment extends Fragment {
             siteId = getArguments().getString(ARG_SITE_ID);
         }
     }
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.id.home) {
-            requireActivity().onBackPressed();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_site_details, container, false);
+        view = inflater.inflate(R.layout.fragment_site_details, container, false);
 
         siteNameTextView = view.findViewById(R.id.siteNameTextView);
         siteAddressTextView = view.findViewById(R.id.siteAddressTextView);
@@ -67,6 +63,7 @@ public class SiteDetailsFragment extends Fragment {
 
         return view;
     }
+
     @Override
     public void onResume() {
         super.onResume();
@@ -94,6 +91,10 @@ public class SiteDetailsFragment extends Fragment {
     }
 
     private void fetchSiteDetails() {
+        if (view == null) {
+            Log.e(TAG, "View is null in fetchSiteDetails");
+            return;
+        }
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("donationSites").document(siteId)
                 .get()
@@ -105,15 +106,39 @@ public class SiteDetailsFragment extends Fragment {
                             siteAddressTextView.setText(site.getAddress());
                             siteHoursTextView.setText(site.getDonationHours());
                             requiredBloodTypesTextView.setText("Required Blood Types: " + formatBloodTypes(site.getRequiredBloodTypes()));
+                            // Set onClickListeners for buttons
+                            Button registerToDonateButton = view.findViewById(R.id.registerToDonateButton);
+                            Button registerAsVolunteerButton = view.findViewById(R.id.registerAsVolunteerButton);
+                            Button getDirectionsButton = view.findViewById(R.id.getDirectionsButton);
+
+                            registerToDonateButton.setOnClickListener(v -> {
+                                // Handle "Register to Donate" button click
+                                Toast.makeText(getContext(), "Register to Donate clicked for site: " + site.getSiteName(), Toast.LENGTH_SHORT).show();
+                                // Here you can open a new Fragment or Activity to handle the donation registration process
+                            });
+
+                            registerAsVolunteerButton.setOnClickListener(v -> {
+                                // Handle "Register as Volunteer" button click
+                                Toast.makeText(getContext(), "Register as Volunteer clicked for site: " + site.getSiteName(), Toast.LENGTH_SHORT).show();
+                                // Similar to above, handle the volunteer registration process
+                            });
+
+                            getDirectionsButton.setOnClickListener(v -> {
+                                // Handle "Get Directions" button click
+                                Toast.makeText(getContext(), "Get Directions clicked for site: " + site.getSiteName(), Toast.LENGTH_SHORT).show();
+                                // Implement the logic to show directions to the donation site,
+                                // for example, by opening the Google Maps app with directions.
+                            });
+
                         }
                     } else {
                         // Handle the case where the document does not exist
-                        Log.e("SiteDetailsFragment", "Site not found");
+                        Log.e(TAG, "Site not found");
                     }
                 })
                 .addOnFailureListener(e -> {
                     // Handle any errors here
-                    Log.e("SiteDetailsFragment", "Error fetching site details", e);
+                    Log.e(TAG, "Error fetching site details", e);
                 });
     }
     private String formatBloodTypes(List<String> bloodTypes) {
@@ -121,5 +146,14 @@ public class SiteDetailsFragment extends Fragment {
             return "Not specified";
         }
         return String.join(", ", bloodTypes);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            requireActivity().onBackPressed();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }
