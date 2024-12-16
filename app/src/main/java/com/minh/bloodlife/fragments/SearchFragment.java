@@ -85,26 +85,40 @@ public class SearchFragment extends Fragment {
     }
 
     private void performSearch(String query) {
-        db.collection("donationSites")
-                .whereGreaterThanOrEqualTo("siteName", query)
-                .whereLessThanOrEqualTo("siteName", query + "\uf8ff")
-                .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful()) {
-                            siteList.clear();
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                DonationSite site = document.toObject(DonationSite.class);
-                                siteList.add(site);
-                            }
-                            adapter.notifyDataSetChanged();
-                        } else {
-                            Log.w("SearchFragment", "Error getting documents.", task.getException());
-                            Toast.makeText(getContext(), "Search failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
+        List<String> selectedBloodTypes = getSelectedBloodTypes();
+
+        // Create a Firestore query reference
+        com.google.firebase.firestore.Query queryRef = db.collection("donationSites");
+
+        // If there's a search query, filter by site name
+        if (!query.isEmpty()) {
+            // Convert query to lowercase for case-insensitive matching
+            String queryLower = query.toLowerCase();
+
+            // Use whereArrayContains for partial matching (if needed)
+            queryRef = queryRef.whereGreaterThanOrEqualTo("searchableName", queryLower)
+                    .whereLessThanOrEqualTo("searchableName", queryLower + "\uf8ff");
+        }
+
+        // If there are selected blood types, filter by them
+        if (!selectedBloodTypes.isEmpty()) {
+            queryRef = queryRef.whereIn("requiredBloodTypes", selectedBloodTypes);
+        }
+
+        // Execute the query
+        queryRef.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                siteList.clear();
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    DonationSite site = document.toObject(DonationSite.class);
+                    siteList.add(site);
+                }
+                adapter.notifyDataSetChanged();
+            } else {
+                Log.w("SearchFragment", "Error getting documents.", task.getException());
+                Toast.makeText(getContext(), "Search failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
     private List<String> getSelectedBloodTypes() {
         List<String> selectedTypes = new ArrayList<>();

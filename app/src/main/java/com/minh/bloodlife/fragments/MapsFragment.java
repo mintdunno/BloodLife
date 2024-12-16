@@ -50,8 +50,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
     private Location lastKnownLocation;
     private FirebaseFirestore db;
 
-    // ... other variables
-
     private final ActivityResultLauncher<String[]> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), permissions -> {
                 if (permissions.get(Manifest.permission.ACCESS_FINE_LOCATION) && permissions.get(Manifest.permission.ACCESS_COARSE_LOCATION)) {
@@ -171,6 +169,13 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
                             // Set the document ID as the site ID
                             String siteId = document.getId();
                             site.setSiteId(document.getId());
+
+                            // Update the document with the lowercase site name for searching
+                            db.collection("donationSites").document(siteId)
+                                    .update("searchableName", site.getSiteName().toLowerCase())
+                                    .addOnSuccessListener(aVoid -> Log.d(TAG, "DocumentSnapshot successfully updated with searchableName!"))
+                                    .addOnFailureListener(e -> Log.w(TAG, "Error updating document with searchableName", e));
+
                             if (site.getLocation() != null) {
                                 LatLng siteLatLng = new LatLng(site.getLocation().getLatitude(), site.getLocation().getLongitude());
                                 Marker marker = googleMap.addMarker(new MarkerOptions()
@@ -205,8 +210,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
             transaction.commit();
         }
 
-        return true;
+        return true; // Return true to indicate that we have consumed the event
     }
+
     @Override
     public void onResume() {
         super.onResume();
