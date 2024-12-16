@@ -16,6 +16,15 @@ import java.util.List;
 public class DonationSiteAdapter extends RecyclerView.Adapter<DonationSiteAdapter.ViewHolder> {
 
     private List<DonationSite> donationSites;
+    private OnItemClickListener listener;
+
+    public interface OnItemClickListener {
+        void onItemClick(DonationSite site);
+    }
+
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        this.listener = listener;
+    }
 
     public DonationSiteAdapter(List<DonationSite> donationSites) {
         this.donationSites = donationSites;
@@ -25,7 +34,7 @@ public class DonationSiteAdapter extends RecyclerView.Adapter<DonationSiteAdapte
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_donation_site, parent, false);
-        return new ViewHolder(view);
+        return new ViewHolder(view, listener, donationSites);
     }
 
     @Override
@@ -44,13 +53,19 @@ public class DonationSiteAdapter extends RecyclerView.Adapter<DonationSiteAdapte
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView siteNameTextView;
         TextView siteAddressTextView;
-        // Add references to other views in your item layout
 
-        public ViewHolder(View itemView) {
+        public ViewHolder(View itemView, OnItemClickListener listener, List<DonationSite> donationSites) {
             super(itemView);
             siteNameTextView = itemView.findViewById(R.id.siteNameTextView);
             siteAddressTextView = itemView.findViewById(R.id.siteAddressTextView);
-            // Initialize other views
+            itemView.setOnClickListener(view -> {
+                if (listener != null) {
+                    int position = getAdapterPosition();
+                    if (position != RecyclerView.NO_POSITION) {
+                        listener.onItemClick(donationSites.get(position));
+                    }
+                }
+            });
         }
     }
 }

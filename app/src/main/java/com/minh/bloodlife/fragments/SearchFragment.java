@@ -13,6 +13,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -62,6 +63,19 @@ public class SearchFragment extends Fragment {
         searchResultsRecyclerView.setAdapter(adapter);
         searchResultsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
+        // Set up item click listener for the RecyclerView
+        adapter.setOnItemClickListener(new DonationSiteAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(DonationSite site) {
+                // Open SiteDetailsFragment and pass the siteId
+                SiteDetailsFragment siteDetailsFragment = SiteDetailsFragment.newInstance(site.getSiteId());
+                FragmentTransaction transaction = requireActivity().getSupportFragmentManager().beginTransaction();
+                transaction.replace(R.id.fragmentContainer, siteDetailsFragment);
+                transaction.addToBackStack(null); // Optional: Add to back stack for navigation
+                transaction.commit();
+            }
+        });
+
         // Add a TextWatcher to the search bar
         searchText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -81,7 +95,7 @@ public class SearchFragment extends Fragment {
             }
         });
 
-        // Handle filter chip selections
+        // Handle filter chip selections (add logic in the next step)
         filterChipGroup.setOnCheckedStateChangeListener((group, checkedIds) -> {
             performSearch(searchText.getText().toString().trim());
         });
