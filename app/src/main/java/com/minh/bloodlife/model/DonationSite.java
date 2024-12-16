@@ -2,20 +2,22 @@ package com.minh.bloodlife.model;
 
 import com.google.firebase.firestore.GeoPoint;
 
+import java.util.List;
+
 public class DonationSite {
     private String siteId;
     private String siteName;
     private String address;
     private GeoPoint location; // Use GeoPoint for storing latitude and longitude
     private String donationHours;
-    private String requiredBloodTypes;
+    private List<String> requiredBloodTypes;
     private String managerId;
 
     // Default constructor
     public DonationSite() {}
 
     // Constructor
-    public DonationSite(String siteName, String address, GeoPoint location, String donationHours, String requiredBloodTypes, String managerId) {
+    public DonationSite(String siteName, String address, GeoPoint location, String donationHours, List<String> requiredBloodTypes, String managerId) {
         this.siteName = siteName;
         this.address = address;
         this.location = location;
@@ -64,11 +66,11 @@ public class DonationSite {
         this.donationHours = donationHours;
     }
 
-    public String getRequiredBloodTypes() {
+    public List<String> getRequiredBloodTypes() {
         return requiredBloodTypes;
     }
 
-    public void setRequiredBloodTypes(String requiredBloodTypes) {
+    public void setRequiredBloodTypes(List<String> requiredBloodTypes) {
         this.requiredBloodTypes = requiredBloodTypes;
     }
 

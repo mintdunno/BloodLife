@@ -38,6 +38,9 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.minh.bloodlife.R;
 import com.minh.bloodlife.model.DonationSite;
 
+import java.util.List;
+
+
 public class MapsFragment extends Fragment implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
     private static final String TAG = "MapsFragment";
@@ -197,6 +200,13 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
                         Toast.makeText(getContext(), "Failed to load donation sites", Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+    // Helper method to format the list of blood types for display
+    private String formatRequiredBloodTypes(List<String> bloodTypes) {
+        if (bloodTypes == null || bloodTypes.isEmpty()) {
+            return "No blood types specified";
+        }
+        return "Required: " + String.join(", ", bloodTypes);
     }
 
     @Override
