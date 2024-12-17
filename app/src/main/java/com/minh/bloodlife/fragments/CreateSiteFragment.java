@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
@@ -53,16 +54,16 @@ import java.util.Map;
 public class CreateSiteFragment extends Fragment {
 
     private static final String TAG = "CreateSiteFragment";
-    private TextInputEditText siteNameEditText, donationHoursEditText, startDateEditText, endDateEditText;
+    private static final String PLACES_API_KEY = "AIzaSyAmYG0ewlmb4zaJAkC6pBsFjqi0NBQu-Po";
+    private TextInputEditText siteNameEditText, donationStartTimeEditText, donationEndTimeEditText, startDateEditText, endDateEditText;
     private EditText siteAddressEditText;
-    private ChipGroup bloodTypesChipGroup;
+    private ChipGroup bloodTypesChipGroup, donationDaysChipGroup;
     private Button createSiteButton;
     private FirebaseFirestore db;
     private FirebaseAuth mAuth;
     private Calendar startCalendar, endCalendar;
     private LatLng selectedLatLng;
     private Geocoder geocoder;
-    private static final String PLACES_API_KEY = "YOUR_API_KEY";
 
     @Nullable
     @Override
@@ -72,11 +73,13 @@ public class CreateSiteFragment extends Fragment {
 
         siteNameEditText = view.findViewById(R.id.siteNameEditText);
         siteAddressEditText = view.findViewById(R.id.siteAddressEditText);
-        donationHoursEditText = view.findViewById(R.id.donationHoursEditText);
+        donationStartTimeEditText = view.findViewById(R.id.donationStartTimeEditText);
+        donationEndTimeEditText = view.findViewById(R.id.donationEndTimeEditText);
         bloodTypesChipGroup = view.findViewById(R.id.bloodTypesChipGroup);
         createSiteButton = view.findViewById(R.id.createSiteButton);
         startDateEditText = view.findViewById(R.id.startDateEditText);
         endDateEditText = view.findViewById(R.id.endDateEditText);
+        donationDaysChipGroup = view.findViewById(R.id.donationDaysChipGroup);
 
         db = FirebaseFirestore.getInstance();
         mAuth = FirebaseAuth.getInstance();
@@ -93,7 +96,7 @@ public class CreateSiteFragment extends Fragment {
 
         // Initialize the Places SDK
         if (!Places.isInitialized()) {
-            Places.initialize(requireActivity().getApplicationContext(), PLACES_API_KEY);
+            Places.initialize(getActivity().getApplicationContext(), PLACES_API_KEY);
         }
         geocoder = new Geocoder(getContext(), Locale.getDefault());
 
@@ -126,8 +129,9 @@ public class CreateSiteFragment extends Fragment {
             }
         });
 
-        // Set up time picker for donation hours
-        donationHoursEditText.setOnClickListener(v -> showTimePickerDialog());
+        // Set up time pickers for donation start and end times
+        donationStartTimeEditText.setOnClickListener(v -> showTimePickerDialog(true));
+        donationEndTimeEditText.setOnClickListener(v -> showTimePickerDialog(false));
 
         createSiteButton.setOnClickListener(v -> createSite());
 
@@ -171,7 +175,7 @@ public class CreateSiteFragment extends Fragment {
         }
     }
 
-    private void showTimePickerDialog() {
+    private void showTimePickerDialog(boolean isStartTime) {
         final Calendar calendar = Calendar.getInstance();
         int hour = calendar.get(Calendar.HOUR_OF_DAY);
         int minute = calendar.get(Calendar.MINUTE);
@@ -180,25 +184,41 @@ public class CreateSiteFragment extends Fragment {
                 new TimePickerDialog.OnTimeSetListener() {
                     @Override
                     public void onTimeSet(TimePicker view, int hourOfDay, int minuteOfHour) {
-                        // Handle the selected time here
                         String formattedTime = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minuteOfHour);
-                        donationHoursEditText.setText(formattedTime);
+                        if (isStartTime) {
+                            donationStartTimeEditText.setText(formattedTime);
+                        } else {
+                            donationEndTimeEditText.setText(formattedTime);
+                        }
                     }
-                }, hour, minute, true); // true for 24-hour format
+                }, hour, minute, true);
         timePickerDialog.show();
+    }
+
+    private List<String> getSelectedDays() {
+        List<String> selectedDays = new ArrayList<>();
+        for (int i = 0; i < donationDaysChipGroup.getChildCount(); i++) {
+            Chip chip = (Chip) donationDaysChipGroup.getChildAt(i);
+            if (chip.isChecked()) {
+                selectedDays.add(chip.getText().toString());
+            }
+        }
+        return selectedDays;
     }
 
     private void createSite() {
         String siteName = siteNameEditText.getText().toString().trim();
         String siteAddress = siteAddressEditText.getText().toString().trim();
-        String donationHours = donationHoursEditText.getText().toString().trim();
+        String donationStartTime = donationStartTimeEditText.getText().toString().trim();
+        String donationEndTime = donationEndTimeEditText.getText().toString().trim();
         List<String> requiredBloodTypes = getSelectedBloodTypes();
         String startDate = startDateEditText.getText().toString().trim();
         String endDate = endDateEditText.getText().toString().trim();
+        List<String> donationDays = getSelectedDays();
 
         // Check if any field is empty
-        if (siteName.isEmpty() || siteAddress.isEmpty() || donationHours.isEmpty() ||
-                requiredBloodTypes.isEmpty() || startDate.isEmpty() || endDate.isEmpty()) {
+        if (siteName.isEmpty() || siteAddress.isEmpty() || donationStartTime.isEmpty() || donationEndTime.isEmpty() ||
+                requiredBloodTypes.isEmpty() || startDate.isEmpty() || endDate.isEmpty() || donationDays.isEmpty()) {
             Toast.makeText(getContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -230,13 +250,15 @@ public class CreateSiteFragment extends Fragment {
         Map<String, Object> site = new HashMap<>();
         site.put("siteName", siteName);
         site.put("address", siteAddress);
-        site.put("donationHours", donationHours);
+        site.put("donationStartTime", donationStartTime);
+        site.put("donationEndTime", donationEndTime);
         site.put("requiredBloodTypes", requiredBloodTypes);
         site.put("managerId", managerId);
         site.put("searchableName", siteName.toLowerCase());
         site.put("location", location);
         site.put("startDate", startDate);
         site.put("endDate", endDate);
+        site.put("donationDays", donationDays);
 
         // Add the new site to Firestore
         db.collection("donationSites")
