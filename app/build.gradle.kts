@@ -52,4 +52,8 @@ dependencies {
     implementation(libs.firebase.firestore)
     // Firebase Analytics
     implementation(libs.firebase.analytics)
+    implementation ("com.google.android.gms:play-services-places:17.1.0")
+    implementation ("com.google.android.libraries.places:places:3.3.0")
+    //noinspection GradleDependency
+    implementation ("com.google.android.gms:play-services-location:21.3.0")
 }

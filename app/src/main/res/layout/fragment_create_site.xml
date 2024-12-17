@@ -2,8 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:layout_height="match_parent">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -12,115 +11,129 @@
         android:padding="16dp">
 
         <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/siteNameLayout"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/site_name">
+            android:hint="Site Name">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/siteNameEditText"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="text" />
+                android:layout_height="wrap_content" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/siteAddressLayout"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        <fragment
+            android:id="@+id/autocomplete_fragment"
+            android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <EditText
+            android:id="@+id/siteAddressEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:hint="@string/site_address">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/siteAddressEditText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:focusable="false"
-                android:inputType="textPostalAddress" />
-        </com.google.android.material.textfield.TextInputLayout>
+            android:hint="Site Address"
+            android:focusable="false"/>
 
         <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/donationHoursLayout"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:hint="@string/donation_hours">
+            android:hint="Donation Hours">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/donationHoursEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:focusable="false"
-                android:inputType="text" />
+                android:focusable="false" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Start Date">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/startDateEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:focusable="false" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="End Date">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/endDateEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:focusable="false" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="@string/required_blood_types"
-            android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
+            android:layout_marginTop="8dp"
+            android:text="Required Blood Types:"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
 
         <com.google.android.material.chip.ChipGroup
             android:id="@+id/bloodTypesChipGroup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:singleSelection="false">
+            android:layout_marginTop="8dp">
 
             <com.google.android.material.chip.Chip
-                android:id="@+id/chipTypeAPos"
+                android:id="@+id/chip_blood_type_a_plus"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="A+" />
 
             <com.google.android.material.chip.Chip
-                android:id="@+id/chipTypeANeg"
+                android:id="@+id/chip_blood_type_a_minus"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="A-" />
 
             <com.google.android.material.chip.Chip
-                android:id="@+id/chipTypeBPos"
+                android:id="@+id/chip_blood_type_b_plus"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="B+" />
 
             <com.google.android.material.chip.Chip
-                android:id="@+id/chipTypeBNeg"
+                android:id="@+id/chip_blood_type_b_minus"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="B-" />
 
             <com.google.android.material.chip.Chip
-                android:id="@+id/chipTypeABPos"
+                android:id="@+id/chip_blood_type_ab_plus"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="AB+" />
 
             <com.google.android.material.chip.Chip
-                android:id="@+id/chipTypeABNeg"
+                android:id="@+id/chip_blood_type_ab_minus"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="AB-" />
 
             <com.google.android.material.chip.Chip
-                android:id="@+id/chipTypeOPos"
+                android:id="@+id/chip_blood_type_o_plus"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="O+" />
 
             <com.google.android.material.chip.Chip
-                android:id="@+id/chipTypeONeg"
+                android:id="@+id/chip_blood_type_o_minus"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -131,10 +144,7 @@
             android:id="@+id/createSiteButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:backgroundTint="@color/primary_red"
-            android:text="@string/create_site"
-            android:textColor="@color/white" />
-
+            android:layout_marginTop="16dp"
+            android:text="Create Site" />
     </LinearLayout>
 </ScrollView>
