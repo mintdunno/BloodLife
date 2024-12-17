@@ -39,20 +39,17 @@ dependencies {
     implementation(libs.activity)
     implementation(libs.constraintlayout)
     implementation(libs.play.services.location)
+    implementation(libs.play.services.maps)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 
-    implementation(libs.material.v190)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     // Firebase Authentication
     implementation(libs.firebase.auth)
-    // Firebase Realtime Database
-    implementation(libs.firebase.database)
-    // FireStore
+    // Firestore
     implementation(libs.firebase.firestore)
-    // Map
-    implementation(libs.play.services.maps)
-    implementation(libs.play.services.maps)
+    // Firebase Analytics
+    implementation(libs.firebase.analytics)
 }
