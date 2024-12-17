@@ -212,20 +212,16 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
     // In MapsFragment.java
     @Override
     public boolean onMarkerClick(Marker marker) {
-        // Retrieve the site ID associated with the marker
         String siteId = (String) marker.getTag();
+        Log.d(TAG, "Marker clicked - siteId: " + siteId); // Add this log
         if (siteId != null) {
-            // Create a new instance of SiteDetailsFragment and pass the site ID
             SiteDetailsFragment siteDetailsFragment = SiteDetailsFragment.newInstance(siteId);
-
-            // Replace the current fragment with SiteDetailsFragment using FragmentTransaction
             FragmentTransaction transaction = requireActivity().getSupportFragmentManager().beginTransaction();
             transaction.replace(R.id.fragmentContainer, siteDetailsFragment);
-            transaction.addToBackStack(null); // Add transaction to the back stack
+            transaction.addToBackStack(null);
             transaction.commit();
         }
-
-        return true; // Return true to indicate that the event has been consumed
+        return true;
     }
 
     @Override

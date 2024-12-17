@@ -18,12 +18,20 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.minh.bloodlife.R;
 import com.minh.bloodlife.model.DonationSite;
+import com.minh.bloodlife.model.Registration;
 
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class SiteDetailsFragment extends Fragment {
 
@@ -39,6 +47,7 @@ public class SiteDetailsFragment extends Fragment {
         Bundle args = new Bundle();
         args.putString(ARG_SITE_ID, siteId);
         fragment.setArguments(args);
+        Log.d(TAG, "newInstance - siteId: " + siteId); // Add this log
         return fragment;
     }
 
@@ -47,6 +56,7 @@ public class SiteDetailsFragment extends Fragment {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             siteId = getArguments().getString(ARG_SITE_ID);
+            Log.d(TAG, "onCreate - siteId: " + siteId); // Add this log
         }
     }
 
@@ -93,6 +103,7 @@ public class SiteDetailsFragment extends Fragment {
     }
 
     private void fetchSiteDetails() {
+        Log.d(TAG, "fetchSiteDetails called for siteId: " + siteId);
         if (view == null) {
             Log.e(TAG, "View is null in fetchSiteDetails");
             return;
@@ -114,31 +125,16 @@ public class SiteDetailsFragment extends Fragment {
                             Button getDirectionsButton = view.findViewById(R.id.getDirectionsButton);
 
                             registerToDonateButton.setOnClickListener(v -> {
-                                // Handle "Register to Donate" button click
-                                Toast.makeText(getContext(), "Register to Donate clicked for site: " + site.getSiteName(), Toast.LENGTH_SHORT).show();
-                                // Here you can open a new Fragment or Activity to handle the donation registration process
+                                handleRegisterToDonate(site);
                             });
 
                             registerAsVolunteerButton.setOnClickListener(v -> {
-                                // Handle "Register as Volunteer" button click
-                                Toast.makeText(getContext(), "Register as Volunteer clicked for site: " + site.getSiteName(), Toast.LENGTH_SHORT).show();
-                                // Similar to above, handle the volunteer registration process
+                                handleRegisterAsVolunteer(site);
                             });
 
                             getDirectionsButton.setOnClickListener(v -> {
-                                // Assuming 'site' is the DonationSite object
-                                if (site != null && site.getLocation() != null) {
-                                    double latitude = site.getLocation().getLatitude();
-                                    double longitude = site.getLocation().getLongitude();
-                                    String uri = String.format("geo:%f,%f?q=%f,%f", latitude, longitude, latitude, longitude);
-                                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
-                                    intent.setPackage("com.google.android.apps.maps"); // Restrict to Google Maps app
-                                    if (intent.resolveActivity(requireActivity().getPackageManager()) != null) {
-                                        startActivity(intent);
-                                    } else {
-                                        Toast.makeText(getContext(), "Google Maps app not found.", Toast.LENGTH_SHORT).show();
-                                    }
-                                }
+                                // Handle "Get Directions" button click
+                                getDirectionsToSite(site);
                             });
 
                         }
@@ -166,5 +162,63 @@ public class SiteDetailsFragment extends Fragment {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void handleRegisterToDonate(DonationSite site) {
+        // Assuming you have a way to get the current user's ID, e.g., from Firebase Auth
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        registerForEvent(userId, site.getSiteId(), false, 1); // Assuming 1 person for simplicity
+    }
+
+    private void handleRegisterAsVolunteer(DonationSite site) {
+        // Assuming you have a way to get the current user's ID
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        registerForEvent(userId, site.getSiteId(), true, 0); // 0 for numDonors as it's a volunteer
+    }
+
+    private void registerForEvent(String userId, String siteId, boolean isVolunteer, int numDonors) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        // Create a new registration
+        Map<String, Object> registration = new HashMap<>();
+        registration.put("userId", userId);
+        registration.put("siteId", siteId);
+        registration.put("registrationDate", new Date()); // Current date
+        registration.put("isVolunteer", isVolunteer);
+        registration.put("numDonors", numDonors); // This can be adjusted based on your app's requirements
+
+        // Add the registration to Firestore
+        db.collection("registrations")
+                .add(registration)
+                .addOnSuccessListener(documentReference -> {
+                    Log.d(TAG, "Registration added with ID: " + documentReference.getId());
+                    Toast.makeText(getContext(), "Registration successful", Toast.LENGTH_SHORT).show();
+                    // Optionally navigate the user or update UI
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error adding registration", e);
+                    Toast.makeText(getContext(), "Registration failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void getDirectionsToSite(DonationSite site) {
+        if (site != null && site.getLocation() != null) {
+            double latitude = site.getLocation().getLatitude();
+            double longitude = site.getLocation().getLongitude();
+
+            // Create a Uri for the Google Maps app
+            Uri gmmIntentUri = Uri.parse("google.navigation:q=" + latitude + "," + longitude);
+            Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+            mapIntent.setPackage("com.google.android.apps.maps");
+
+            // Check if the Google Maps app is installed
+            if (mapIntent.resolveActivity(getContext().getPackageManager()) != null) {
+                startActivity(mapIntent);
+            } else {
+                Toast.makeText(getContext(), "Google Maps app not found.", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Toast.makeText(getContext(), "Site location is not available.", Toast.LENGTH_SHORT).show();
+        }
     }
 }
