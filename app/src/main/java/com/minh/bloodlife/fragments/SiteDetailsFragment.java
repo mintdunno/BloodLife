@@ -1,5 +1,7 @@
 package com.minh.bloodlife.fragments;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -124,10 +126,19 @@ public class SiteDetailsFragment extends Fragment {
                             });
 
                             getDirectionsButton.setOnClickListener(v -> {
-                                // Handle "Get Directions" button click
-                                Toast.makeText(getContext(), "Get Directions clicked for site: " + site.getSiteName(), Toast.LENGTH_SHORT).show();
-                                // Implement the logic to show directions to the donation site,
-                                // for example, by opening the Google Maps app with directions.
+                                // Assuming 'site' is the DonationSite object
+                                if (site != null && site.getLocation() != null) {
+                                    double latitude = site.getLocation().getLatitude();
+                                    double longitude = site.getLocation().getLongitude();
+                                    String uri = String.format("geo:%f,%f?q=%f,%f", latitude, longitude, latitude, longitude);
+                                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+                                    intent.setPackage("com.google.android.apps.maps"); // Restrict to Google Maps app
+                                    if (intent.resolveActivity(requireActivity().getPackageManager()) != null) {
+                                        startActivity(intent);
+                                    } else {
+                                        Toast.makeText(getContext(), "Google Maps app not found.", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
                             });
 
                         }

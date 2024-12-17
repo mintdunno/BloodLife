@@ -3,20 +3,19 @@ package com.minh.bloodlife.model;
 import java.util.Date;
 
 public class Registration {
-    private int registrationId;
-    private int userId; // Foreign key referencing User.userId
-    private int siteId; // Foreign key referencing DonationSite.siteId
+    private String registrationId;
+    private String userId;
+    private String siteId;
     private Date registrationDate;
-    private boolean isVolunteer;
-    private int numDonors;
+    private boolean isVolunteer; // true if volunteering, false if donating
+    private int numDonors; // Number of people donating (if applicable)
 
-    // Constructor
+    // Default constructor (required for Firestore)
     public Registration() {
-        // Default constructor
     }
 
-    // Constructor with parameters
-    public Registration(int userId, int siteId, Date registrationDate, boolean isVolunteer, int numDonors) {
+    // Constructor
+    public Registration(String userId, String siteId, Date registrationDate, boolean isVolunteer, int numDonors) {
         this.userId = userId;
         this.siteId = siteId;
         this.registrationDate = registrationDate;
@@ -24,27 +23,28 @@ public class Registration {
         this.numDonors = numDonors;
     }
 
-    public int getRegistrationId() {
+    // Getters and setters for all fields...
+    public String getRegistrationId() {
         return registrationId;
     }
 
-    public void setRegistrationId(int registrationId) {
+    public void setRegistrationId(String registrationId) {
         this.registrationId = registrationId;
     }
 
-    public int getUserId() {
+    public String getUserId() {
         return userId;
     }
 
-    public void setUserId(int userId) {
+    public void setUserId(String userId) {
         this.userId = userId;
     }
 
-    public int getSiteId() {
+    public String getSiteId() {
         return siteId;
     }
 
-    public void setSiteId(int siteId) {
+    public void setSiteId(String siteId) {
         this.siteId = siteId;
     }
 
