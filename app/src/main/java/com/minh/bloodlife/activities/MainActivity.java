@@ -20,7 +20,10 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GetTokenResult;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.minh.bloodlife.R;
+import com.minh.bloodlife.fragments.CreateSiteFragment;
 import com.minh.bloodlife.fragments.MapsFragment;
 import com.minh.bloodlife.fragments.ProfileFragment;
 import com.minh.bloodlife.fragments.SearchFragment;
@@ -30,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
 
     private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
     private BottomNavigationView bottomNavigationView;
 
     @Override
@@ -38,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance(); // Initialize Firestore
 
         bottomNavigationView = findViewById(R.id.bottomNavigationView);
         bottomNavigationView.setOnItemSelectedListener(item -> {
@@ -50,25 +55,26 @@ public class MainActivity extends AppCompatActivity {
                 selectedFragment = new SearchFragment();
             } else if (itemId == R.id.menu_profile) {
                 selectedFragment = new ProfileFragment();
+            } else if (itemId == R.id.menu_create_site) {
+                selectedFragment = new CreateSiteFragment();
             }
-            // TODO: Add conditional logic for other menu items based on user type
+            // ... other menu items
 
             if (selectedFragment != null) {
                 getSupportFragmentManager().beginTransaction()
                         .replace(R.id.fragmentContainer, selectedFragment)
                         .commit();
             }
-
             return true;
         });
 
-        // Set the default fragment to load when the activity starts
+        // Set the default fragment
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.fragmentContainer, new MapsFragment())
                     .commit();
         }
-        // Set the custom ActionBar title view
+
         centerActionBarTitle();
     }
 
@@ -92,11 +98,47 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onStart() {
         super.onStart();
-        // Check if user is signed in (non-null)
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) {
-            // No user is signed in, redirect to LoginActivity
             redirectToLogin();
+        } else {
+            // Fetch user role and update the menu
+            fetchUserRoleAndUpdateMenu(currentUser.getUid());
+        }
+    }
+
+    private void fetchUserRoleAndUpdateMenu(String userId) {
+        db.collection("users").document(userId).get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        DocumentSnapshot document = task.getResult();
+                        if (document != null && document.exists()) {
+                            String userType = document.getString("userType");
+                            Log.d(TAG, "User type: " + userType);
+                            updateNavigationBar(userType);
+                        } else {
+                            Log.d(TAG, "User document not found");
+                            // Handle case where user document doesn't exist (maybe redirect to login or show an error)
+                            updateNavigationBar(null); // Set a default menu
+                        }
+                    } else {
+                        Log.e(TAG, "Error fetching user data", task.getException());
+                        // Handle error fetching user data
+                        updateNavigationBar(null); // Set a default menu
+                    }
+                });
+    }
+
+    private void updateNavigationBar(String userType) {
+        Menu menu = bottomNavigationView.getMenu();
+        MenuItem createSiteItem = menu.findItem(R.id.menu_create_site);
+
+        if (createSiteItem != null) {
+            if ("Site Manager".equals(userType)) {
+                createSiteItem.setVisible(true);
+            } else {
+                createSiteItem.setVisible(false);
+            }
         }
     }
 
@@ -155,12 +197,4 @@ public class MainActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
-//    private void updateNavigationBar(String userType) {
-//        Menu menu = bottomNavigationView.getMenu();
-    // Example: Only show 'Create Site' if the user is a Site Manager
-//        MenuItem createSiteItem = menu.findItem(R.id.menu_create_site);
-//        if (createSiteItem != null) {
-//            createSiteItem.setVisible("siteManager".equals(userType));
-//        }
-//    }
 }

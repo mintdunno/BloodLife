@@ -11,7 +11,14 @@
         android:title="@string/search" />
 
     <item
+        android:id="@+id/menu_create_site"
+        android:icon="@drawable/ic_add_location"
+        android:title="Create Site"
+        android:visible="false" />
+
+    <item
         android:id="@+id/menu_profile"
         android:icon="@drawable/ic_person"
         android:title="@string/profile" />
+
 </menu>
