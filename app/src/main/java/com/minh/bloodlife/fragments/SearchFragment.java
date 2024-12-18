@@ -84,6 +84,7 @@ public class SearchFragment extends Fragment {
         startDateEditText.setOnClickListener(v -> showDatePickerDialog(true));
         endDateEditText.setOnClickListener(v -> showDatePickerDialog(false));
 
+
         // Set up item click listener for the RecyclerView
         adapter.setOnItemClickListener(new DonationSiteAdapter.OnItemClickListener() {
             @Override
@@ -181,37 +182,40 @@ public class SearchFragment extends Fragment {
 
     private void performSearch(String query) {
         searchProgressBar.setVisibility(View.VISIBLE);
-        MapsFragment mapsFragment = (MapsFragment)
-                requireActivity().getSupportFragmentManager().findFragmentByTag("MapsFragment");
+
+        // Get the user's location from MapsFragment (if available)
+        MapsFragment mapsFragment = (MapsFragment) requireActivity().getSupportFragmentManager().findFragmentByTag("MapsFragment");
         Location userLocation = mapsFragment != null ? mapsFragment.getLastKnownLocation() : null;
+
+        // Get selected blood types and "Near Me" status
         List<String> selectedBloodTypes = getSelectedBloodTypes();
+        Log.d(TAG, "Selected blood types: " + selectedBloodTypes.toString()); // Debug log
         boolean isNearMeSelected = filterChipGroup.getCheckedChipIds().contains(R.id.chipNearMe);
+
+        // Base query
         com.google.firebase.firestore.Query firestoreQuery = db.collection("donationSites");
 
-        // Apply the site name filter if the query is not empty
+        // Apply filters based on selected criteria
+
+        // 1. Search Text Filter:
         if (!query.isEmpty()) {
             firestoreQuery = firestoreQuery.whereGreaterThanOrEqualTo("searchableName", query.toLowerCase())
                     .whereLessThanOrEqualTo("searchableName", query.toLowerCase() + "\uf8ff");
         }
 
-        // Apply blood type filter if there are selected blood types
+        // 2. Blood Type Filter:
         if (!selectedBloodTypes.isEmpty()) {
             firestoreQuery = firestoreQuery.whereArrayContainsAny("requiredBloodTypes", selectedBloodTypes);
         }
 
-        // Apply "Near Me" filter if selected and user location is available
+        // 3. "Near Me" Filter:
         if (isNearMeSelected && userLocation != null) {
-            // Convert user's location to GeoPoint
             GeoPoint geoPoint = new GeoPoint(userLocation.getLatitude(), userLocation.getLongitude());
-
-            // Bounding box calculation (approximation for simplicity)
             double radius = 20; // Radius in kilometers
             double lat = geoPoint.getLatitude();
             double lon = geoPoint.getLongitude();
-
-            double latOffset = radius / 111.12;
+            double latOffset = radius / 111.12; // Approximate km to degrees latitude
             double lonOffset = radius / (111.12 * Math.cos(Math.toRadians(lat)));
-
             GeoPoint southWest = new GeoPoint(lat - latOffset, lon - lonOffset);
             GeoPoint northEast = new GeoPoint(lat + latOffset, lon + lonOffset);
 
@@ -220,12 +224,12 @@ public class SearchFragment extends Fragment {
                     .whereLessThanOrEqualTo("location", northEast);
         }
 
-        // Apply date range filter if both start and end dates are selected
-        if (startCalendar != null && endCalendar != null) {
+        // 4. Date Range Filter:
+        if (!startDateEditText.getText().toString().isEmpty() && !endDateEditText.getText().toString().isEmpty()) {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
             try {
-                Date startDate = sdf.parse(sdf.format(startCalendar.getTime()));
-                Date endDate = sdf.parse(sdf.format(endCalendar.getTime()));
+                Date startDate = sdf.parse(startDateEditText.getText().toString());
+                Date endDate = sdf.parse(endDateEditText.getText().toString());
 
                 firestoreQuery = firestoreQuery
                         .whereGreaterThanOrEqualTo("startDate", sdf.format(startDate))
@@ -234,6 +238,9 @@ public class SearchFragment extends Fragment {
                 Log.e(TAG, "Error parsing date", e);
             }
         }
+
+        // Log the constructed query for debugging
+        Log.d(TAG, "Firestore query: " + firestoreQuery.toString());
 
         // Execute the query
         firestoreQuery.get().addOnCompleteListener(task -> {
@@ -258,10 +265,9 @@ public class SearchFragment extends Fragment {
         List<String> selectedTypes = new ArrayList<>();
         for (int id : filterChipGroup.getCheckedChipIds()) {
             Chip chip = filterChipGroup.findViewById(id);
-            if (chip.getText().toString().equals("Near Me")) {
-                continue;
+            if (!chip.getText().toString().equals("Near Me")) {
+                selectedTypes.add(chip.getText().toString());
             }
-            selectedTypes.add(chip.getText().toString());
         }
         return selectedTypes;
     }

@@ -111,56 +111,28 @@
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="A+" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_blood_type_a_minus"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="A-" />
+                android:text="A" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chip_blood_type_b_plus"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="B+" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_blood_type_b_minus"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="B-" />
+                android:text="B" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chip_blood_type_ab_plus"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="AB+" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_blood_type_ab_minus"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="AB-" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_blood_type_o_plus"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="O+" />
+                android:text="AB" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chip_blood_type_o_minus"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="O-" />
+                android:text="O" />
         </com.google.android.material.chip.ChipGroup>
 
         <TextView

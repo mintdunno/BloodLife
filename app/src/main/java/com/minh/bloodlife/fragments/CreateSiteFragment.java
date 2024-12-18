@@ -235,8 +235,9 @@ public class CreateSiteFragment extends Fragment {
             return;
         }
 
+        // Check if start and end dates are within selected donation days
         if (!isWithinSelectedDays(donationDays, startCalendar, endCalendar)) {
-            Toast.makeText(getContext(), "Selected dates must fall within the chosen donation days", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "Start and end dates must be on selected donation days", Toast.LENGTH_SHORT).show();
             createSiteProgressBar.setVisibility(View.GONE);
             return;
         }
@@ -314,22 +315,32 @@ public class CreateSiteFragment extends Fragment {
     }
 
     private boolean isWithinSelectedDays(List<String> selectedDays, Calendar start, Calendar end) {
-        Calendar current = (Calendar) start.clone();
         SimpleDateFormat dayFormat = new SimpleDateFormat("EEE", Locale.getDefault());
 
-        while (current.before(end) || current.equals(end)) {
-            String dayOfWeek = dayFormat.format(current.getTime());
-            boolean found = false;
-            for (String selectedDay : selectedDays) {
-                if (selectedDay.toLowerCase().startsWith(dayOfWeek.toLowerCase())) {
-                    found = true;
-                    break;
-                }
+        // Check if start date is on a selected day
+        String startDayOfWeek = dayFormat.format(start.getTime());
+        boolean startFound = false;
+        for (String selectedDay : selectedDays) {
+            if (selectedDay.toLowerCase().startsWith(startDayOfWeek.toLowerCase())) {
+                startFound = true;
+                break;
             }
-            if (!found) {
-                return false;
+        }
+        if (!startFound) {
+            return false;
+        }
+
+        // Check if end date is on a selected day
+        String endDayOfWeek = dayFormat.format(end.getTime());
+        boolean endFound = false;
+        for (String selectedDay : selectedDays) {
+            if (selectedDay.toLowerCase().startsWith(endDayOfWeek.toLowerCase())) {
+                endFound = true;
+                break;
             }
-            current.add(Calendar.DAY_OF_MONTH, 1);
+        }
+        if (!endFound) {
+            return false;
         }
 
         return true;
