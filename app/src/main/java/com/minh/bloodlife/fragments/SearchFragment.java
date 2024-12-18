@@ -84,7 +84,6 @@ public class SearchFragment extends Fragment {
         startDateEditText.setOnClickListener(v -> showDatePickerDialog(true));
         endDateEditText.setOnClickListener(v -> showDatePickerDialog(false));
 
-
         // Set up item click listener for the RecyclerView
         adapter.setOnItemClickListener(new DonationSiteAdapter.OnItemClickListener() {
             @Override
@@ -179,37 +178,41 @@ public class SearchFragment extends Fragment {
                     }
                 });
     }
-
     private void performSearch(String query) {
         searchProgressBar.setVisibility(View.VISIBLE);
 
-        // Get the user's location from MapsFragment (if available)
         MapsFragment mapsFragment = (MapsFragment) requireActivity().getSupportFragmentManager().findFragmentByTag("MapsFragment");
         Location userLocation = mapsFragment != null ? mapsFragment.getLastKnownLocation() : null;
-
-        // Get selected blood types and "Near Me" status
         List<String> selectedBloodTypes = getSelectedBloodTypes();
-        Log.d(TAG, "Selected blood types: " + selectedBloodTypes.toString()); // Debug log
         boolean isNearMeSelected = filterChipGroup.getCheckedChipIds().contains(R.id.chipNearMe);
 
-        // Base query
+        // Log filter values for debugging:
+        Log.d(TAG, "Selected blood types: " + selectedBloodTypes.toString());
+        Log.d(TAG, "Is Near Me selected: " + isNearMeSelected);
+        Log.d(TAG, "User location: " + userLocation);
+        Log.d(TAG, "Start Date: " + startDateEditText.getText().toString());
+        Log.d(TAG, "End Date: " + endDateEditText.getText().toString());
+
         com.google.firebase.firestore.Query firestoreQuery = db.collection("donationSites");
 
         // Apply filters based on selected criteria
 
         // 1. Search Text Filter:
         if (!query.isEmpty()) {
+            Log.d(TAG, "Applying search text filter"); // Debug log
             firestoreQuery = firestoreQuery.whereGreaterThanOrEqualTo("searchableName", query.toLowerCase())
                     .whereLessThanOrEqualTo("searchableName", query.toLowerCase() + "\uf8ff");
         }
 
         // 2. Blood Type Filter:
         if (!selectedBloodTypes.isEmpty()) {
-            firestoreQuery = firestoreQuery.whereArrayContainsAny("requiredBloodTypes", selectedBloodTypes);
+            Log.d(TAG, "Applying blood type filter"); // Debug log
+            firestoreQuery = firestoreQuery.whereIn("requiredBloodTypes", selectedBloodTypes);
         }
 
         // 3. "Near Me" Filter:
         if (isNearMeSelected && userLocation != null) {
+            Log.d(TAG, "Applying 'Near Me' filter"); // Debug log
             GeoPoint geoPoint = new GeoPoint(userLocation.getLatitude(), userLocation.getLongitude());
             double radius = 20; // Radius in kilometers
             double lat = geoPoint.getLatitude();
@@ -226,6 +229,7 @@ public class SearchFragment extends Fragment {
 
         // 4. Date Range Filter:
         if (!startDateEditText.getText().toString().isEmpty() && !endDateEditText.getText().toString().isEmpty()) {
+            Log.d(TAG, "Applying date range filter"); // Debug log
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
             try {
                 Date startDate = sdf.parse(startDateEditText.getText().toString());
