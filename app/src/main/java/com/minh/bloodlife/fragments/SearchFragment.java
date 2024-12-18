@@ -8,9 +8,11 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.Toast;
 import android.app.DatePickerDialog;
 import android.widget.DatePicker;
+import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -42,9 +44,7 @@ import java.util.List;
 import java.util.Locale;
 
 public class SearchFragment extends Fragment {
-
     private static final String TAG = "SearchFragment";
-
     private TextInputEditText searchText;
     private ChipGroup filterChipGroup;
     private RecyclerView searchResultsRecyclerView;
@@ -54,17 +54,20 @@ public class SearchFragment extends Fragment {
     private TextInputEditText startDateEditText;
     private TextInputEditText endDateEditText;
     private Calendar startCalendar, endCalendar;
+    private ProgressBar searchProgressBar;
+    private Button resetFiltersButton;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_search, container, false);
-
         searchText = view.findViewById(R.id.searchText);
         filterChipGroup = view.findViewById(R.id.filterChipGroup);
         searchResultsRecyclerView = view.findViewById(R.id.searchResultsRecyclerView);
         startDateEditText = view.findViewById(R.id.startDateEditText);
         endDateEditText = view.findViewById(R.id.endDateEditText);
+        searchProgressBar = view.findViewById(R.id.searchProgressBar);
+        resetFiltersButton = view.findViewById(R.id.resetFiltersButton);
 
         // Initialize Firestore
         db = FirebaseFirestore.getInstance();
@@ -118,9 +121,10 @@ public class SearchFragment extends Fragment {
             performSearch(searchText.getText().toString().trim());
         });
 
+        resetFiltersButton.setOnClickListener(v -> resetFilters());
+
         // Load all donation sites initially
         loadAllDonationSites();
-
         return view;
     }
 
@@ -142,7 +146,8 @@ public class SearchFragment extends Fragment {
 
         Calendar calendar = isStartDate ? startCalendar : endCalendar;
         DatePickerDialog datePickerDialog = new DatePickerDialog(
-                getContext(), dateSetListener, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)
+                getContext(), dateSetListener, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH)
         );
         datePickerDialog.show();
     }
@@ -154,9 +159,11 @@ public class SearchFragment extends Fragment {
     }
 
     private void loadAllDonationSites() {
+        searchProgressBar.setVisibility(View.VISIBLE);
         db.collection("donationSites")
                 .get()
                 .addOnCompleteListener(task -> {
+                    searchProgressBar.setVisibility(View.GONE);
                     if (task.isSuccessful()) {
                         siteList.clear();
                         for (QueryDocumentSnapshot document : task.getResult()) {
@@ -173,11 +180,12 @@ public class SearchFragment extends Fragment {
     }
 
     private void performSearch(String query) {
-        MapsFragment mapsFragment = (MapsFragment) requireActivity().getSupportFragmentManager().findFragmentByTag("MapsFragment");
+        searchProgressBar.setVisibility(View.VISIBLE);
+        MapsFragment mapsFragment = (MapsFragment)
+                requireActivity().getSupportFragmentManager().findFragmentByTag("MapsFragment");
         Location userLocation = mapsFragment != null ? mapsFragment.getLastKnownLocation() : null;
         List<String> selectedBloodTypes = getSelectedBloodTypes();
         boolean isNearMeSelected = filterChipGroup.getCheckedChipIds().contains(R.id.chipNearMe);
-
         com.google.firebase.firestore.Query firestoreQuery = db.collection("donationSites");
 
         // Apply the site name filter if the query is not empty
@@ -229,6 +237,7 @@ public class SearchFragment extends Fragment {
 
         // Execute the query
         firestoreQuery.get().addOnCompleteListener(task -> {
+            searchProgressBar.setVisibility(View.GONE);
             if (task.isSuccessful()) {
                 siteList.clear();
                 for (QueryDocumentSnapshot document : task.getResult()) {
@@ -255,5 +264,23 @@ public class SearchFragment extends Fragment {
             selectedTypes.add(chip.getText().toString());
         }
         return selectedTypes;
+    }
+
+    private void resetFilters() {
+        searchText.setText(""); // Clear search text
+
+        // Clear date fields
+        startDateEditText.setText("");
+        endDateEditText.setText("");
+
+        // Reset start and end Calendars
+        startCalendar = Calendar.getInstance();
+        endCalendar = Calendar.getInstance();
+
+        // Uncheck all filter chips
+        filterChipGroup.clearCheck(); // This will clear all checked chips
+
+        // Reload all donation sites (or perform a search with empty parameters)
+        loadAllDonationSites();
     }
 }
