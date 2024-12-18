@@ -9,6 +9,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
+import android.app.DatePickerDialog;
+import android.widget.DatePicker;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -31,8 +33,13 @@ import com.minh.bloodlife.activities.MainActivity;
 import com.minh.bloodlife.adapter.DonationSiteAdapter;
 import com.minh.bloodlife.model.DonationSite;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class SearchFragment extends Fragment {
 
@@ -44,6 +51,9 @@ public class SearchFragment extends Fragment {
     private FirebaseFirestore db;
     private DonationSiteAdapter adapter;
     private List<DonationSite> siteList;
+    private TextInputEditText startDateEditText;
+    private TextInputEditText endDateEditText;
+    private Calendar startCalendar, endCalendar;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -53,6 +63,8 @@ public class SearchFragment extends Fragment {
         searchText = view.findViewById(R.id.searchText);
         filterChipGroup = view.findViewById(R.id.filterChipGroup);
         searchResultsRecyclerView = view.findViewById(R.id.searchResultsRecyclerView);
+        startDateEditText = view.findViewById(R.id.startDateEditText);
+        endDateEditText = view.findViewById(R.id.endDateEditText);
 
         // Initialize Firestore
         db = FirebaseFirestore.getInstance();
@@ -62,6 +74,12 @@ public class SearchFragment extends Fragment {
         adapter = new DonationSiteAdapter(siteList);
         searchResultsRecyclerView.setAdapter(adapter);
         searchResultsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+
+        startCalendar = Calendar.getInstance();
+        endCalendar = Calendar.getInstance();
+
+        startDateEditText.setOnClickListener(v -> showDatePickerDialog(true));
+        endDateEditText.setOnClickListener(v -> showDatePickerDialog(false));
 
         // Set up item click listener for the RecyclerView
         adapter.setOnItemClickListener(new DonationSiteAdapter.OnItemClickListener() {
@@ -95,7 +113,7 @@ public class SearchFragment extends Fragment {
             }
         });
 
-        // Handle filter chip selections (add logic in the next step)
+        // Handle filter chip selections
         filterChipGroup.setOnCheckedStateChangeListener((group, checkedIds) -> {
             performSearch(searchText.getText().toString().trim());
         });
@@ -104,6 +122,35 @@ public class SearchFragment extends Fragment {
         loadAllDonationSites();
 
         return view;
+    }
+
+    private void showDatePickerDialog(boolean isStartDate) {
+        DatePickerDialog.OnDateSetListener dateSetListener = (view, year, month, dayOfMonth) -> {
+            if (isStartDate) {
+                startCalendar.set(Calendar.YEAR, year);
+                startCalendar.set(Calendar.MONTH, month);
+                startCalendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                updateDateLabel(startDateEditText, startCalendar);
+            } else {
+                endCalendar.set(Calendar.YEAR, year);
+                endCalendar.set(Calendar.MONTH, month);
+                endCalendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                updateDateLabel(endDateEditText, endCalendar);
+            }
+            performSearch(searchText.getText().toString().trim());
+        };
+
+        Calendar calendar = isStartDate ? startCalendar : endCalendar;
+        DatePickerDialog datePickerDialog = new DatePickerDialog(
+                getContext(), dateSetListener, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)
+        );
+        datePickerDialog.show();
+    }
+
+    private void updateDateLabel(TextInputEditText editText, Calendar calendar) {
+        String myFormat = "yyyy-MM-dd"; // Define your format
+        SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.getDefault());
+        editText.setText(sdf.format(calendar.getTime()));
     }
 
     private void loadAllDonationSites() {
@@ -128,7 +175,6 @@ public class SearchFragment extends Fragment {
     private void performSearch(String query) {
         MapsFragment mapsFragment = (MapsFragment) requireActivity().getSupportFragmentManager().findFragmentByTag("MapsFragment");
         Location userLocation = mapsFragment != null ? mapsFragment.getLastKnownLocation() : null;
-
         List<String> selectedBloodTypes = getSelectedBloodTypes();
         boolean isNearMeSelected = filterChipGroup.getCheckedChipIds().contains(R.id.chipNearMe);
 
@@ -155,7 +201,7 @@ public class SearchFragment extends Fragment {
             double lat = geoPoint.getLatitude();
             double lon = geoPoint.getLongitude();
 
-            double latOffset = radius / 111.12; // Approximate km to degrees latitude
+            double latOffset = radius / 111.12;
             double lonOffset = radius / (111.12 * Math.cos(Math.toRadians(lat)));
 
             GeoPoint southWest = new GeoPoint(lat - latOffset, lon - lonOffset);
@@ -164,6 +210,21 @@ public class SearchFragment extends Fragment {
             firestoreQuery = firestoreQuery
                     .whereGreaterThanOrEqualTo("location", southWest)
                     .whereLessThanOrEqualTo("location", northEast);
+        }
+
+        // Apply date range filter if both start and end dates are selected
+        if (startCalendar != null && endCalendar != null) {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            try {
+                Date startDate = sdf.parse(sdf.format(startCalendar.getTime()));
+                Date endDate = sdf.parse(sdf.format(endCalendar.getTime()));
+
+                firestoreQuery = firestoreQuery
+                        .whereGreaterThanOrEqualTo("startDate", sdf.format(startDate))
+                        .whereLessThanOrEqualTo("endDate", sdf.format(endDate));
+            } catch (ParseException e) {
+                Log.e(TAG, "Error parsing date", e);
+            }
         }
 
         // Execute the query
@@ -178,7 +239,8 @@ public class SearchFragment extends Fragment {
                 adapter.notifyDataSetChanged();
             } else {
                 Log.w(TAG, "Error getting documents.", task.getException());
-                Toast.makeText(getContext(), "Search failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Search failed: " + task.getException().getMessage(),
+                        Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -187,6 +249,9 @@ public class SearchFragment extends Fragment {
         List<String> selectedTypes = new ArrayList<>();
         for (int id : filterChipGroup.getCheckedChipIds()) {
             Chip chip = filterChipGroup.findViewById(id);
+            if (chip.getText().toString().equals("Near Me")) {
+                continue;
+            }
             selectedTypes.add(chip.getText().toString());
         }
         return selectedTypes;

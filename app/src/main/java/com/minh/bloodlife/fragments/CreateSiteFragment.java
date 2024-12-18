@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
@@ -46,16 +47,20 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class CreateSiteFragment extends Fragment {
 
     private static final String TAG = "CreateSiteFragment";
     private static final String PLACES_API_KEY = "AIzaSyAmYG0ewlmb4zaJAkC6pBsFjqi0NBQu-Po";
-    private TextInputEditText siteNameEditText, donationStartTimeEditText, donationEndTimeEditText, startDateEditText, endDateEditText;
+
+    private TextInputEditText siteNameEditText, donationStartTimeEditText, donationEndTimeEditText,
+            startDateEditText, endDateEditText;
     private EditText siteAddressEditText;
     private ChipGroup bloodTypesChipGroup, donationDaysChipGroup;
     private Button createSiteButton;
@@ -64,13 +69,18 @@ public class CreateSiteFragment extends Fragment {
     private Calendar startCalendar, endCalendar;
     private LatLng selectedLatLng;
     private Geocoder geocoder;
+    private TextView donationDaysTextView; // TextView to display selected days
+    private View view;
+
+    private ProgressBar createSiteProgressBar;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_create_site, container, false);
+        view = inflater.inflate(R.layout.fragment_create_site, container, false);
 
+        // Initialize UI components
         siteNameEditText = view.findViewById(R.id.siteNameEditText);
         siteAddressEditText = view.findViewById(R.id.siteAddressEditText);
         donationStartTimeEditText = view.findViewById(R.id.donationStartTimeEditText);
@@ -80,133 +90,136 @@ public class CreateSiteFragment extends Fragment {
         startDateEditText = view.findViewById(R.id.startDateEditText);
         endDateEditText = view.findViewById(R.id.endDateEditText);
         donationDaysChipGroup = view.findViewById(R.id.donationDaysChipGroup);
+        donationDaysTextView = view.findViewById(R.id.donationDaysTextView); // TextView for selected days
+        createSiteProgressBar = view.findViewById(R.id.createSiteProgressBar);
 
+        // Initialize Firebase
         db = FirebaseFirestore.getInstance();
         mAuth = FirebaseAuth.getInstance();
 
-        // Initialize the start and end Calendars
+        // Initialize start and end Calendars
         startCalendar = Calendar.getInstance();
         endCalendar = Calendar.getInstance();
 
-        // Set up date picker for start date
-        startDateEditText.setOnClickListener(v -> showDatePickerDialog(true));
-
-        // Set up date picker for end date
-        endDateEditText.setOnClickListener(v -> showDatePickerDialog(false));
-
-        // Initialize the Places SDK
+        // Initialize Places API
         if (!Places.isInitialized()) {
             Places.initialize(getActivity().getApplicationContext(), PLACES_API_KEY);
         }
         geocoder = new Geocoder(getContext(), Locale.getDefault());
 
-        // Create a new Places client instance
-        PlacesClient placesClient = Places.createClient(getContext());
+        // Set up AutocompleteSupportFragment for place selection
+        setupPlaceAutocomplete();
 
-        // Initialize the AutocompleteSupportFragment
-        AutocompleteSupportFragment autocompleteFragment = (AutocompleteSupportFragment)
-                getChildFragmentManager().findFragmentById(R.id.autocomplete_fragment);
-
-        // Specify the types of place data to return
-        autocompleteFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS));
-
-        // Set up a PlaceSelectionListener to handle the response
-        autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
-            @Override
-            public void onPlaceSelected(@NonNull Place place) {
-                // Get info about the selected place
-                Log.i(TAG, "Place: " + place.getName() + ", " + place.getId() + ", " + place.getAddress());
-                siteAddressEditText.setText(place.getAddress());
-
-                selectedLatLng = place.getLatLng();
-            }
-
-            @Override
-            public void onError(@NonNull Status status) {
-                // Handle the error
-                Log.e(TAG, "An error occurred: " + status);
-                Toast.makeText(getContext(), "Error: " + status.getStatusMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        // Set up time pickers for donation start and end times
+        // Set up date and time pickers
+        startDateEditText.setOnClickListener(v -> showDatePickerDialog(true));
+        endDateEditText.setOnClickListener(v -> showDatePickerDialog(false));
         donationStartTimeEditText.setOnClickListener(v -> showTimePickerDialog(true));
         donationEndTimeEditText.setOnClickListener(v -> showTimePickerDialog(false));
 
+        // Set up ChipGroup listener for donation days
+        setupDonationDaysChipGroup();
+
+        // Set up click listener for create site button
         createSiteButton.setOnClickListener(v -> createSite());
 
         return view;
     }
 
-    private void showDatePickerDialog(boolean isStartDate) {
-        DatePickerDialog.OnDateSetListener dateSetListener = new DatePickerDialog.OnDateSetListener() {
+    private void setupPlaceAutocomplete() {
+        AutocompleteSupportFragment autocompleteFragment = (AutocompleteSupportFragment)
+                getChildFragmentManager().findFragmentById(R.id.autocomplete_fragment);
+
+        autocompleteFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG,
+                Place.Field.ADDRESS));
+
+        autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
-            public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
-                if (isStartDate) {
-                    startCalendar.set(Calendar.YEAR, year);
-                    startCalendar.set(Calendar.MONTH, month);
-                    startCalendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-                } else {
-                    endCalendar.set(Calendar.YEAR, year);
-                    endCalendar.set(Calendar.MONTH, month);
-                    endCalendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-                }
-                updateDateLabel(isStartDate);
+            public void onPlaceSelected(@NonNull Place place) {
+                siteAddressEditText.setText(place.getAddress());
+                selectedLatLng = place.getLatLng();
             }
+
+            @Override
+            public void onError(@NonNull Status status) {
+                Log.e(TAG, "An error occurred: " + status);
+                Toast.makeText(getContext(), "Error: " + status.getStatusMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void showDatePickerDialog(boolean isStartDate) {
+        DatePickerDialog.OnDateSetListener dateSetListener = (view, year, month, dayOfMonth) -> {
+            Calendar calendar = isStartDate ? startCalendar : endCalendar;
+            calendar.set(Calendar.YEAR, year);
+            calendar.set(Calendar.MONTH, month);
+            calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+            updateDateLabel(isStartDate ? startDateEditText : endDateEditText, calendar);
         };
 
         Calendar calendar = isStartDate ? startCalendar : endCalendar;
-        DatePickerDialog datePickerDialog = new DatePickerDialog(
+        new DatePickerDialog(
                 getContext(),
                 dateSetListener,
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
                 calendar.get(Calendar.DAY_OF_MONTH)
-        );
-        datePickerDialog.show();
+        ).show();
     }
 
-    private void updateDateLabel(boolean isStartDate) {
+    private void updateDateLabel(EditText editText, Calendar calendar) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        if (isStartDate) {
-            startDateEditText.setText(sdf.format(startCalendar.getTime()));
-        } else {
-            endDateEditText.setText(sdf.format(endCalendar.getTime()));
-        }
+        editText.setText(sdf.format(calendar.getTime()));
     }
 
     private void showTimePickerDialog(boolean isStartTime) {
-        final Calendar calendar = Calendar.getInstance();
-        int hour = calendar.get(Calendar.HOUR_OF_DAY);
-        int minute = calendar.get(Calendar.MINUTE);
+        TimePickerDialog.OnTimeSetListener timeSetListener = (view, hourOfDay, minute) -> {
+            String formattedTime = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute);
+            if (isStartTime) {
+                donationStartTimeEditText.setText(formattedTime);
+            } else {
+                donationEndTimeEditText.setText(formattedTime);
+            }
+        };
 
-        TimePickerDialog timePickerDialog = new TimePickerDialog(getContext(),
-                new TimePickerDialog.OnTimeSetListener() {
-                    @Override
-                    public void onTimeSet(TimePicker view, int hourOfDay, int minuteOfHour) {
-                        String formattedTime = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minuteOfHour);
-                        if (isStartTime) {
-                            donationStartTimeEditText.setText(formattedTime);
-                        } else {
-                            donationEndTimeEditText.setText(formattedTime);
-                        }
-                    }
-                }, hour, minute, true);
-        timePickerDialog.show();
+        Calendar calendar = Calendar.getInstance();
+        new TimePickerDialog(
+                getContext(),
+                timeSetListener,
+                calendar.get(Calendar.HOUR_OF_DAY),
+                calendar.get(Calendar.MINUTE),
+                true
+        ).show();
+    }
+
+    private void setupDonationDaysChipGroup() {
+        donationDaysChipGroup.setOnCheckedStateChangeListener((group, checkedIds) -> {
+            List<String> selectedDays = new ArrayList<>();
+            for (int id : checkedIds) {
+                Chip chip = group.findViewById(id);
+                selectedDays.add(chip.getText().toString());
+            }
+
+            // Update the TextView with the selected days
+            String formattedDays = selectedDays.stream()
+                    .map(day -> day.substring(0, Math.min(day.length(), 3))) // Get first 3 letters
+                    .collect(Collectors.joining(", ")); // Join with comma and space
+
+            donationDaysTextView.setText(getString(R.string.selected_days_text, formattedDays));
+        });
     }
 
     private List<String> getSelectedDays() {
         List<String> selectedDays = new ArrayList<>();
-        for (int i = 0; i < donationDaysChipGroup.getChildCount(); i++) {
-            Chip chip = (Chip) donationDaysChipGroup.getChildAt(i);
-            if (chip.isChecked()) {
-                selectedDays.add(chip.getText().toString());
-            }
+        for (int checkedId : donationDaysChipGroup.getCheckedChipIds()) {
+            Chip chip = donationDaysChipGroup.findViewById(checkedId);
+            selectedDays.add(chip.getText().toString());
         }
         return selectedDays;
     }
 
     private void createSite() {
+        createSiteProgressBar.setVisibility(View.VISIBLE);
+        // Collect data from input fields
         String siteName = siteNameEditText.getText().toString().trim();
         String siteAddress = siteAddressEditText.getText().toString().trim();
         String donationStartTime = donationStartTimeEditText.getText().toString().trim();
@@ -216,35 +229,31 @@ public class CreateSiteFragment extends Fragment {
         String endDate = endDateEditText.getText().toString().trim();
         List<String> donationDays = getSelectedDays();
 
-        // Check if any field is empty
-        if (siteName.isEmpty() || siteAddress.isEmpty() || donationStartTime.isEmpty() || donationEndTime.isEmpty() ||
-                requiredBloodTypes.isEmpty() || startDate.isEmpty() || endDate.isEmpty() || donationDays.isEmpty()) {
-            Toast.makeText(getContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
+        // Validation
+        if (!validateInputFields(siteName, siteAddress, donationStartTime, donationEndTime, startDate, endDate)) {
+            createSiteProgressBar.setVisibility(View.GONE);
             return;
         }
 
-        // Validate dates
-        if (startCalendar.after(endCalendar)) {
-            Toast.makeText(getContext(), "End date must be after start date", Toast.LENGTH_SHORT).show();
+        if (!isWithinSelectedDays(donationDays, startCalendar, endCalendar)) {
+            Toast.makeText(getContext(), "Selected dates must fall within the chosen donation days", Toast.LENGTH_SHORT).show();
+            createSiteProgressBar.setVisibility(View.GONE);
             return;
         }
 
+        // Get the current user
         FirebaseUser user = mAuth.getCurrentUser();
         if (user == null) {
             Toast.makeText(getContext(), "User not authenticated.", Toast.LENGTH_SHORT).show();
+            createSiteProgressBar.setVisibility(View.GONE);
             return;
         }
-
         String managerId = user.getUid();
 
         // Convert the selected LatLng to a GeoPoint
-        GeoPoint location = null;
-        if (selectedLatLng != null) {
-            location = new GeoPoint(selectedLatLng.latitude, selectedLatLng.longitude);
-        } else {
-            Toast.makeText(getContext(), "Please select a location", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        GeoPoint location = (selectedLatLng != null) ?
+                new GeoPoint(selectedLatLng.latitude, selectedLatLng.longitude) :
+                null;
 
         // Create a new donation site object
         Map<String, Object> site = new HashMap<>();
@@ -265,11 +274,65 @@ public class CreateSiteFragment extends Fragment {
                 .add(site)
                 .addOnSuccessListener(documentReference -> {
                     Toast.makeText(getContext(), "Donation site created successfully", Toast.LENGTH_SHORT).show();
-                    // Optionally, clear the form or navigate the user to a different fragment
+                    createSiteProgressBar.setVisibility(View.GONE);
+                    clearForm();
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(), "Error creating donation site: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Error creating donation site: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                    createSiteProgressBar.setVisibility(View.GONE);
                 });
+    }
+
+    private boolean validateInputFields(String siteName, String siteAddress, String donationStartTime,
+                                        String donationEndTime, String startDate, String endDate) {
+        if (siteName.isEmpty() || siteAddress.isEmpty() || donationStartTime.isEmpty() ||
+                donationEndTime.isEmpty() || startDate.isEmpty() || endDate.isEmpty()) {
+            Toast.makeText(getContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
+        if (!donationStartTime.matches("\\d{2}:\\d{2}") || !donationEndTime.matches("\\d{2}:\\d{2}")) {
+            Toast.makeText(getContext(), "Invalid time format", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        try {
+            Date startDateObj = dateFormat.parse(startDate);
+            Date endDateObj = dateFormat.parse(endDate);
+            if (!endDateObj.after(startDateObj)) {
+                Toast.makeText(getContext(), "End date must be after start date", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+        } catch (Exception e) {
+            Toast.makeText(getContext(), "Invalid date format", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean isWithinSelectedDays(List<String> selectedDays, Calendar start, Calendar end) {
+        Calendar current = (Calendar) start.clone();
+        SimpleDateFormat dayFormat = new SimpleDateFormat("EEE", Locale.getDefault());
+
+        while (current.before(end) || current.equals(end)) {
+            String dayOfWeek = dayFormat.format(current.getTime());
+            boolean found = false;
+            for (String selectedDay : selectedDays) {
+                if (selectedDay.toLowerCase().startsWith(dayOfWeek.toLowerCase())) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return false;
+            }
+            current.add(Calendar.DAY_OF_MONTH, 1);
+        }
+
+        return true;
     }
 
     private List<String> getSelectedBloodTypes() {
@@ -281,5 +344,31 @@ public class CreateSiteFragment extends Fragment {
             }
         }
         return selectedTypes;
+    }
+
+    private void clearForm() {
+        siteNameEditText.setText("");
+        siteAddressEditText.setText("");
+        donationStartTimeEditText.setText("");
+        donationEndTimeEditText.setText("");
+        startDateEditText.setText("");
+        endDateEditText.setText("");
+
+        // Clear selected blood types
+        bloodTypesChipGroup.clearCheck();
+
+        // Clear selected donation days and reset the TextView
+        donationDaysChipGroup.clearCheck();
+        donationDaysTextView.setText(getString(R.string.selected_days_text, ""));
+
+        // Reset start and end calendars
+        startCalendar = Calendar.getInstance();
+        endCalendar = Calendar.getInstance();
+
+        // Reset selected location (if applicable)
+        selectedLatLng = null;
+
+        // You might need to reset the AutocompleteSupportFragment as well,
+        // depending on how it's implemented
     }
 }

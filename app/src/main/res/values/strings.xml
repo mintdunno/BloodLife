@@ -28,5 +28,6 @@
     <string name="donation_hours">Donation Hours</string>
     <string name="required_blood_types">Required Blood Types</string>
     <string name="create_site">Create Site</string>
+    <string name="selected_days_text">Selected Days: %s</string>
 
 </resources>

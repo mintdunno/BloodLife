@@ -80,6 +80,7 @@
                 android:focusable="false" />
         </com.google.android.material.textfield.TextInputLayout>
 
+
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -227,11 +228,25 @@
                 android:text="Sunday" />
         </com.google.android.material.chip.ChipGroup>
 
+        <TextView
+            android:id="@+id/donationDaysTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Selected Days: " />
+
+
         <Button
             android:id="@+id/createSiteButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:text="Create Site" />
+        <ProgressBar
+            android:id="@+id/createSiteProgressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:visibility="gone" />
     </LinearLayout>
 </ScrollView>
