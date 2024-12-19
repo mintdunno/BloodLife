@@ -68,6 +68,7 @@ public class SearchFragment extends Fragment {
         startDateEditText = view.findViewById(R.id.startDateEditText);
         endDateEditText = view.findViewById(R.id.endDateEditText);
         searchProgressBar = view.findViewById(R.id.searchProgressBar);
+
         resetFiltersButton = view.findViewById(R.id.resetFiltersButton);
         // Initialize Firestore
         db = FirebaseFirestore.getInstance();
@@ -90,6 +91,7 @@ public class SearchFragment extends Fragment {
                 transaction.replace(R.id.fragmentContainer, siteDetailsFragment);
                 transaction.addToBackStack(null); // Optional: Add to back stack for navigation
                 transaction.commit();
+
             }
         });
         // Add a TextWatcher to the search bar
@@ -138,6 +140,7 @@ public class SearchFragment extends Fragment {
         DatePickerDialog datePickerDialog = new DatePickerDialog(
                 getContext(), dateSetListener, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH),
                 calendar.get(Calendar.DAY_OF_MONTH)
+
         );
         datePickerDialog.show();
     }
@@ -165,9 +168,11 @@ public class SearchFragment extends Fragment {
                     } else {
                         Log.w(TAG, "Error getting documents.", task.getException());
                         Toast.makeText(getContext(), "Failed to load donation sites", Toast.LENGTH_SHORT).show();
+
                     }
                 });
     }
+    
     private void performSearch(String query) {
         searchProgressBar.setVisibility(View.VISIBLE);
         MapsFragment mapsFragment = (MapsFragment)
@@ -187,6 +192,7 @@ public class SearchFragment extends Fragment {
         if (!query.isEmpty()) {
             Log.d(TAG, "Applying search text filter"); // Debug log
             firestoreQuery = firestoreQuery.whereGreaterThanOrEqualTo("searchableName", query.toLowerCase())
+
                     .whereLessThanOrEqualTo("searchableName", query.toLowerCase() + "\uf8ff");
         }
         // 2. Blood Type Filter:
@@ -198,7 +204,7 @@ public class SearchFragment extends Fragment {
         if (isNearMeSelected && userLocation != null) {
             Log.d(TAG, "Applying 'Near Me' filter"); // Debug log
             GeoPoint geoPoint = new GeoPoint(userLocation.getLatitude(), userLocation.getLongitude());
-            double radius = 20; // Radius in kilometers
+            double radius = 10; // Adjusted radius to 10 km
             double lat = geoPoint.getLatitude();
             double lon = geoPoint.getLongitude();
             double latOffset = radius / 111.12; // Approximate km to degrees latitude
@@ -209,6 +215,7 @@ public class SearchFragment extends Fragment {
                     .whereGreaterThanOrEqualTo("location", southWest)
                     .whereLessThanOrEqualTo("location", northEast);
         }
+
         // 4. Date Range Filter:
         if (!startDateEditText.getText().toString().isEmpty() && !endDateEditText.getText().toString().isEmpty()) {
             Log.d(TAG, "Applying date range filter"); // Debug log
@@ -217,8 +224,8 @@ public class SearchFragment extends Fragment {
                 Date startDate = sdf.parse(startDateEditText.getText().toString());
                 Date endDate = sdf.parse(endDateEditText.getText().toString());
                 firestoreQuery = firestoreQuery
-                        .whereGreaterThanOrEqualTo("startDate", sdf.format(startDate))
-                        .whereLessThanOrEqualTo("endDate", sdf.format(endDate));
+                        .whereLessThanOrEqualTo("startDate", sdf.format(endDate))
+                        .whereGreaterThanOrEqualTo("endDate", sdf.format(startDate));
             } catch (ParseException e) {
                 Log.e(TAG, "Error parsing date", e);
             }
@@ -254,6 +261,7 @@ public class SearchFragment extends Fragment {
         }
         return selectedTypes;
     }
+
     private void resetFilters() {
         searchText.setText(""); // Clear search text
         // Clear date fields
@@ -269,3 +277,4 @@ public class SearchFragment extends Fragment {
         loadAllDonationSites();
     }
 }
+
