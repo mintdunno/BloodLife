@@ -172,7 +172,7 @@ public class SearchFragment extends Fragment {
                     }
                 });
     }
-    
+
     private void performSearch(String query) {
         searchProgressBar.setVisibility(View.VISIBLE);
         MapsFragment mapsFragment = (MapsFragment)
