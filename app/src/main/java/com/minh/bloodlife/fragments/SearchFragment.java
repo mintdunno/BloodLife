@@ -20,7 +20,6 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.chip.Chip;
@@ -44,7 +43,9 @@ import java.util.List;
 import java.util.Locale;
 
 public class SearchFragment extends Fragment {
+
     private static final String TAG = "SearchFragment";
+
     private TextInputEditText searchText;
     private ChipGroup filterChipGroup;
     private RecyclerView searchResultsRecyclerView;
@@ -68,22 +69,17 @@ public class SearchFragment extends Fragment {
         endDateEditText = view.findViewById(R.id.endDateEditText);
         searchProgressBar = view.findViewById(R.id.searchProgressBar);
         resetFiltersButton = view.findViewById(R.id.resetFiltersButton);
-
         // Initialize Firestore
         db = FirebaseFirestore.getInstance();
-
         // Initialize the adapter and set it to the RecyclerView
         siteList = new ArrayList<>();
         adapter = new DonationSiteAdapter(siteList);
         searchResultsRecyclerView.setAdapter(adapter);
         searchResultsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-
         startCalendar = Calendar.getInstance();
         endCalendar = Calendar.getInstance();
-
         startDateEditText.setOnClickListener(v -> showDatePickerDialog(true));
         endDateEditText.setOnClickListener(v -> showDatePickerDialog(false));
-
         // Set up item click listener for the RecyclerView
         adapter.setOnItemClickListener(new DonationSiteAdapter.OnItemClickListener() {
             @Override
@@ -96,33 +92,28 @@ public class SearchFragment extends Fragment {
                 transaction.commit();
             }
         });
-
         // Add a TextWatcher to the search bar
         searchText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
                 // Not used
             }
-
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 String searchQuery = s.toString().trim();
                 performSearch(searchQuery);
             }
-
             @Override
             public void afterTextChanged(Editable s) {
                 // Not used
             }
         });
-
         // Handle filter chip selections
         filterChipGroup.setOnCheckedStateChangeListener((group, checkedIds) -> {
             performSearch(searchText.getText().toString().trim());
         });
 
         resetFiltersButton.setOnClickListener(v -> resetFilters());
-
         // Load all donation sites initially
         loadAllDonationSites();
         return view;
@@ -143,7 +134,6 @@ public class SearchFragment extends Fragment {
             }
             performSearch(searchText.getText().toString().trim());
         };
-
         Calendar calendar = isStartDate ? startCalendar : endCalendar;
         DatePickerDialog datePickerDialog = new DatePickerDialog(
                 getContext(), dateSetListener, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH),
@@ -180,36 +170,30 @@ public class SearchFragment extends Fragment {
     }
     private void performSearch(String query) {
         searchProgressBar.setVisibility(View.VISIBLE);
-
-        MapsFragment mapsFragment = (MapsFragment) requireActivity().getSupportFragmentManager().findFragmentByTag("MapsFragment");
+        MapsFragment mapsFragment = (MapsFragment)
+                requireActivity().getSupportFragmentManager().findFragmentByTag("MapsFragment");
         Location userLocation = mapsFragment != null ? mapsFragment.getLastKnownLocation() : null;
         List<String> selectedBloodTypes = getSelectedBloodTypes();
         boolean isNearMeSelected = filterChipGroup.getCheckedChipIds().contains(R.id.chipNearMe);
-
         // Log filter values for debugging:
-        Log.d(TAG, "Selected blood types: " + selectedBloodTypes.toString());
+        Log.d(TAG, "Selected blood types: " + selectedBloodTypes);
         Log.d(TAG, "Is Near Me selected: " + isNearMeSelected);
         Log.d(TAG, "User location: " + userLocation);
         Log.d(TAG, "Start Date: " + startDateEditText.getText().toString());
         Log.d(TAG, "End Date: " + endDateEditText.getText().toString());
-
         com.google.firebase.firestore.Query firestoreQuery = db.collection("donationSites");
-
         // Apply filters based on selected criteria
-
         // 1. Search Text Filter:
         if (!query.isEmpty()) {
             Log.d(TAG, "Applying search text filter"); // Debug log
             firestoreQuery = firestoreQuery.whereGreaterThanOrEqualTo("searchableName", query.toLowerCase())
                     .whereLessThanOrEqualTo("searchableName", query.toLowerCase() + "\uf8ff");
         }
-
         // 2. Blood Type Filter:
         if (!selectedBloodTypes.isEmpty()) {
             Log.d(TAG, "Applying blood type filter"); // Debug log
-            firestoreQuery = firestoreQuery.whereIn("requiredBloodTypes", selectedBloodTypes);
+            firestoreQuery = firestoreQuery.whereArrayContainsAny("requiredBloodTypes", selectedBloodTypes);
         }
-
         // 3. "Near Me" Filter:
         if (isNearMeSelected && userLocation != null) {
             Log.d(TAG, "Applying 'Near Me' filter"); // Debug log
@@ -221,12 +205,10 @@ public class SearchFragment extends Fragment {
             double lonOffset = radius / (111.12 * Math.cos(Math.toRadians(lat)));
             GeoPoint southWest = new GeoPoint(lat - latOffset, lon - lonOffset);
             GeoPoint northEast = new GeoPoint(lat + latOffset, lon + lonOffset);
-
             firestoreQuery = firestoreQuery
                     .whereGreaterThanOrEqualTo("location", southWest)
                     .whereLessThanOrEqualTo("location", northEast);
         }
-
         // 4. Date Range Filter:
         if (!startDateEditText.getText().toString().isEmpty() && !endDateEditText.getText().toString().isEmpty()) {
             Log.d(TAG, "Applying date range filter"); // Debug log
@@ -234,7 +216,6 @@ public class SearchFragment extends Fragment {
             try {
                 Date startDate = sdf.parse(startDateEditText.getText().toString());
                 Date endDate = sdf.parse(endDateEditText.getText().toString());
-
                 firestoreQuery = firestoreQuery
                         .whereGreaterThanOrEqualTo("startDate", sdf.format(startDate))
                         .whereLessThanOrEqualTo("endDate", sdf.format(endDate));
@@ -242,10 +223,8 @@ public class SearchFragment extends Fragment {
                 Log.e(TAG, "Error parsing date", e);
             }
         }
-
         // Log the constructed query for debugging
         Log.d(TAG, "Firestore query: " + firestoreQuery.toString());
-
         // Execute the query
         firestoreQuery.get().addOnCompleteListener(task -> {
             searchProgressBar.setVisibility(View.GONE);
@@ -275,10 +254,8 @@ public class SearchFragment extends Fragment {
         }
         return selectedTypes;
     }
-
     private void resetFilters() {
         searchText.setText(""); // Clear search text
-
         // Clear date fields
         startDateEditText.setText("");
         endDateEditText.setText("");
@@ -286,10 +263,8 @@ public class SearchFragment extends Fragment {
         // Reset start and end Calendars
         startCalendar = Calendar.getInstance();
         endCalendar = Calendar.getInstance();
-
         // Uncheck all filter chips
         filterChipGroup.clearCheck(); // This will clear all checked chips
-
         // Reload all donation sites (or perform a search with empty parameters)
         loadAllDonationSites();
     }
