@@ -10,7 +10,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
-import com.minh.bloodlife.activities.MainActivity;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.FirebaseUser;
 import com.minh.bloodlife.R;
 
 public class LoginActivity extends AppCompatActivity {
@@ -23,10 +24,16 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
 
-        // Initialize Firebase Auth
+        // Check if user is already logged in
         mAuth = FirebaseAuth.getInstance();
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser != null) {
+            navigateToMainActivity();
+            return; // Stop further initialization
+        }
+
+        setContentView(R.layout.activity_login);
 
         // Initialize UI components
         editTextEmail = findViewById(R.id.editTextEmail);
@@ -49,11 +56,9 @@ public class LoginActivity extends AppCompatActivity {
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
                             Toast.makeText(LoginActivity.this, "Login Successful", Toast.LENGTH_SHORT).show();
-                            // Navigate to the main activity
-                            startActivity(new Intent(LoginActivity.this, MainActivity.class));
-                            finish();
+                            navigateToMainActivity();
                         } else {
-                            Toast.makeText(LoginActivity.this, "Login Failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                            handleFirebaseAuthError(task.getException());
                         }
                     });
         });
@@ -64,4 +69,38 @@ public class LoginActivity extends AppCompatActivity {
             startActivity(intent);
         });
     }
+
+    private void navigateToMainActivity() {
+        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+        startActivity(intent);
+        finish(); // Close LoginActivity
+    }
+
+    private void handleFirebaseAuthError(Exception exception) {
+        if (exception instanceof FirebaseAuthException) {
+            FirebaseAuthException authException = (FirebaseAuthException) exception;
+            switch (authException.getErrorCode()) {
+                case "ERROR_INVALID_EMAIL":
+                    Toast.makeText(this, "Invalid email format.", Toast.LENGTH_SHORT).show();
+                    break;
+                case "ERROR_WRONG_PASSWORD":
+                    Toast.makeText(this, "Incorrect password.", Toast.LENGTH_SHORT).show();
+                    break;
+                case "ERROR_USER_NOT_FOUND":
+                    Toast.makeText(this, "No account found with this email.", Toast.LENGTH_SHORT).show();
+                    break;
+                case "ERROR_USER_DISABLED":
+                    Toast.makeText(this, "This account has been disabled.", Toast.LENGTH_SHORT).show();
+                    break;
+                case "ERROR_TOO_MANY_REQUESTS":
+                    Toast.makeText(this, "Too many login attempts. Please try again later.", Toast.LENGTH_SHORT).show();
+                    break;
+                default:
+                    Toast.makeText(this, "Login failed: " + exception.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Toast.makeText(this, "An unexpected error occurred: " + exception.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
 }
+
