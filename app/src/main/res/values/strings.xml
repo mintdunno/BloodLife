@@ -1,33 +1,79 @@
 <resources>
     <string name="app_name">BloodLife</string>
-    <string name="email">Username</string>
-    <string name="password">Password</string>
+    <string name="site_name_icon">Site Name Icon</string>
+    <string name="site_address_icon">Site Address Icon</string>
+    <string name="site_start_end_date_icon">Site Start and End Date Icon</string>
+    <string name="site_hours_icon">Site Hours Icon</string>
+    <string name="site_days_icon">Site Days Icon</string>
+    <string name="required_blood_types_icon">Required Blood Types Icon</string>
+    <string name="selected_days_text">Selected Days: %s</string>
+    <string name="create_site">Create Site</string>
+    <string name="site_name">Site Name</string>
+    <string name="enter_site_name">Enter site name</string>
+    <string name="site_address">Site Address</string>
+    <string name="enter_site_address">Enter site address</string>
+    <string name="donation_start_time">Donation Start Time</string>
+    <string name="donation_end_time">Donation End Time</string>
+    <string name="blood_types">Blood Types</string>
+    <string name="create">Create</string>
+    <string name="start_date">Start Date</string>
+    <string name="end_date">End Date</string>
+    <string name="donation_days">Donation Days</string>
+    <string name="monday">Monday</string>
+    <string name="tuesday">Tuesday</string>
+    <string name="wednesday">Wednesday</string>
+    <string name="thursday">Thursday</string>
+    <string name="friday">Friday</string>
+    <string name="saturday">Saturday</string>
+    <string name="sunday">Sunday</string>
+    <string name="search">Search</string>
+    <string name="near_me">Near Me</string>
+    <string name="blood_type">Blood Type</string>
+    <string name="date_range">Date Range</string>
+    <string name="reset_filters">Reset Filters</string>
+    <string name="title_activity_login">LoginActivity</string>
+    <string name="prompt_email">Email</string>
+    <string name="prompt_password">Password</string>
+    <string name="action_sign_in">Sign in or register</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="welcome">"Welcome !"</string>
+    <string name="invalid_username">Not a valid username</string>
+    <string name="invalid_password">Password must be >5 characters</string>
+    <string name="login_failed">"Login failed"</string>
+    <string name="forgot_password"><u>Forgot password?</u></string>
     <string name="login">Login</string>
-    <string name="register_here">Don\'t have an account? Register here</string>
-    <string name="app_logo">BloodLife</string>
+    <string name="register">Register</string>
+    <string name="hint_password">Password</string>
+    <string name="hint_email">Email</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
     <string name="first_name">First Name</string>
     <string name="last_name">Last Name</string>
-    <string name="register">Register</string>
-    <string name="already_have_account">Already have Account ?</string>
-
+    <string name="user_type">User Type</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
+    <string name="donation_sites">Donation Sites</string>
+    <string name="log_out">Log Out</string>
+    <string name="search_donation_sites">Search Donation Sites</string>
+    <string name="search_hint">Search by site name, address, or manager</string>
+    <string name="example_search_query">e.g. Red Cross, 123 Main St, John Doe</string>
+    <string name="filter_options">Filter Options</string>
+    <string name="apply_filters">Apply Filters</string>
+    <string name="title_activity_maps">MapsActivity</string>
+    <string name="map">Map</string>
+    <string name="profile">Profile</string>
+    <string name="logout">Log Out</string>
+    <string name="email">Email</string>
+    <string name="register_here">Register Here</string>
+    <string name="app_logo">App Logo</string>
+    <string name="user_types">User Type</string>
+    <string name="already_have_account">Already Have Account ?</string>
     <string-array name="user_types">
         <item>Donor</item>
         <item>Site Manager</item>
         <item>Super User</item>
     </string-array>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
-
-    <string name="map">Map</string>
-    <string name="search">Search</string>
-    <string name="profile">Profile</string>
-    <string name="logout">Load Out</string>
-    <string name="search_hint">Search for donation sites</string>
-    <string name="site_name">Site Name</string>
-    <string name="site_address">Site Address</string>
-    <string name="donation_hours">Donation Hours</string>
-    <string name="required_blood_types">Required Blood Types</string>
-    <string name="create_site">Create Site</string>
-    <string name="selected_days_text">Selected Days: %s</string>
-
 </resources>
