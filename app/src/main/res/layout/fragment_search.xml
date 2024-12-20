@@ -1,114 +1,154 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="@color/white">
 
+    <!-- Search Bar -->
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        app:endIconMode="custom"
+        app:endIconDrawable="@drawable/ic_search"
+        app:endIconTint="@color/primary_red"
+        android:hint="Search Donation Sites">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/searchText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Search Donation Sites" />
-
+            android:inputType="text"
+            android:imeOptions="actionSearch"
+            android:textAppearance="?attr/textAppearanceBody1" />
     </com.google.android.material.textfield.TextInputLayout>
 
+
+    <!-- Filter Chips -->
     <com.google.android.material.chip.ChipGroup
         android:id="@+id/filterChipGroup"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp">
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="8dp"
+        app:singleSelection="true">
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chipNearMe"
             style="@style/Widget.MaterialComponents.Chip.Filter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Near Me" />
+            android:text="Near Me"
+            app:chipIcon="@drawable/ic_location"
+            app:chipIconTint="@color/primary_red"
+            app:closeIconVisible="false" />
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chipTypeA"
             style="@style/Widget.MaterialComponents.Chip.Filter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="A" />
+            android:text="A"
+            app:chipIcon="@drawable/ic_blood_type"
+            app:chipIconTint="@color/primary_red"
+            app:closeIconVisible="false" />
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chipTypeB"
             style="@style/Widget.MaterialComponents.Chip.Filter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="B" />
+            android:text="B"
+            app:chipIcon="@drawable/ic_blood_type"
+            app:chipIconTint="@color/primary_red"
+            app:closeIconVisible="false" />
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chipTypeAB"
             style="@style/Widget.MaterialComponents.Chip.Filter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="AB" />
+            android:text="AB"
+            app:chipIcon="@drawable/ic_blood_type"
+            app:chipIconTint="@color/primary_red"
+            app:closeIconVisible="false" />
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chipTypeO"
             style="@style/Widget.MaterialComponents.Chip.Filter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="O" />
-
+            android:text="O"
+            app:chipIcon="@drawable/ic_blood_type"
+            app:chipIconTint="@color/primary_red"
+            app:closeIconVisible="false" />
     </com.google.android.material.chip.ChipGroup>
 
+    <!-- Date Filters -->
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp">
+        android:layout_marginTop="8dp"
+        android:hint="Start Date"
+        app:endIconMode="custom"
+        app:endIconDrawable="@drawable/ic_calendar">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/startDateEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:focusable="false"
-            android:hint="Start Date" />
+            android:focusable="false" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp">
+        android:layout_marginTop="8dp"
+        android:hint="End Date"
+        app:endIconMode="custom"
+        app:endIconDrawable="@drawable/ic_calendar">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/endDateEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:focusable="false"
-            android:hint="End Date" />
+            android:focusable="false" />
     </com.google.android.material.textfield.TextInputLayout>
 
+    <!-- Search Results -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/searchResultsRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:padding="8dp" />
 
+    <!-- Reset Button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/resetFiltersButton"
         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="8dp"
-        android:text="Reset"
-        app:icon="@drawable/ic_reset" />
+        android:layout_marginTop="12dp"
+        android:text="Reset Filters"
+        app:icon="@drawable/ic_reset"
+        app:iconGravity="start"
+        app:iconTint="@color/primary_red" />
 
-    <ProgressBar
+    <!-- Loading Indicator -->
+    <com.google.android.material.progressindicator.CircularProgressIndicator
         android:id="@+id/searchProgressBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:visibility="gone" />
-
+        android:layout_marginTop="12dp"
+        android:visibility="gone"
+        app:indicatorColor="@color/primary_red"
+        app:indicatorSize="48dp" />
 </LinearLayout>
