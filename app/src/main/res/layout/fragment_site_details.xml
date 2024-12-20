@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:layout_height="match_parent">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -13,10 +11,12 @@
         android:padding="16dp">
 
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/site_details_card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardCornerRadius="8dp"
-            app:cardElevation="4dp">
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="@color/white">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -24,98 +24,152 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <TextView
-                    android:id="@+id/siteNameTextView"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:id="@+id/siteNameLayout"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Headline"
-                    android:textColor="@color/primaryColor"
-                    android:textSize="24sp"
-                    tools:text="Site Name" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-                <TextView
-                    android:id="@+id/siteAddressTextView"
-                    android:layout_width="wrap_content"
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="8dp"
+                        android:contentDescription="@string/site_name_icon"
+                        android:src="@drawable/ic_site_name" />
+
+                    <TextView
+                        android:id="@+id/siteNameTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Site Name"
+                        android:textAppearance="?attr/textAppearanceHeadline6" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/siteAddressLayout"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:drawablePadding="8dp"
                     android:gravity="center_vertical"
-                    android:textSize="18sp"
-                    app:drawableStartCompat="@drawable/ic_location"
-                    tools:text="Site Address" />
+                    android:orientation="horizontal">
 
-                <TextView
-                    android:id="@+id/siteHoursTextView"
-                    android:layout_width="wrap_content"
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="8dp"
+                        android:contentDescription="@string/site_address_icon"
+                        android:src="@drawable/ic_location" />
+
+                    <TextView
+                        android:id="@+id/siteAddressTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Site Address"
+                        android:textAppearance="?attr/textAppearanceBody1" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/siteStartEndDateLayout"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:drawablePadding="8dp"
                     android:gravity="center_vertical"
-                    android:textSize="18sp"
-                    app:drawableStartCompat="@drawable/ic_time"
-                    tools:text="Donation Hours: From 9:00 AM to 5:00 PM" />
+                    android:orientation="horizontal">
 
-                <TextView
-                    android:id="@+id/siteDaysTextView"
-                    android:layout_width="wrap_content"
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="8dp"
+                        android:contentDescription="@string/site_start_end_date_icon"
+                        android:src="@drawable/ic_calendar" />
+
+                    <TextView
+                        android:id="@+id/siteStartEndDateTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Start Date - End Date"
+                        android:textAppearance="?attr/textAppearanceBody1" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/siteHoursLayout"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:drawablePadding="8dp"
                     android:gravity="center_vertical"
-                    android:textSize="18sp"
-                    app:drawableStartCompat="@drawable/ic_calendar"
-                    tools:text="Days: Mon, Tue, Wed" />
+                    android:orientation="horizontal">
 
-                <TextView
-                    android:id="@+id/requiredBloodTypesTextView"
-                    android:layout_width="wrap_content"
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="8dp"
+                        android:contentDescription="@string/site_hours_icon"
+                        android:src="@drawable/ic_time" />
+
+                    <TextView
+                        android:id="@+id/siteHoursTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Donation Hours"
+                        android:textAppearance="?attr/textAppearanceBody1" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/siteDaysLayout"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:drawablePadding="8dp"
                     android:gravity="center_vertical"
-                    android:textSize="18sp"
-                    app:drawableStartCompat="@drawable/ic_blood_type"
-                    tools:text="Required Blood Types: A+, B-, O+" />
+                    android:orientation="horizontal">
 
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="8dp"
+                        android:contentDescription="@string/site_days_icon"
+                        android:src="@drawable/ic_calendar" />
+
+                    <TextView
+                        android:id="@+id/siteDaysTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Operating Days"
+                        android:textAppearance="?attr/textAppearanceBody1" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/requiredBloodTypesLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="8dp"
+                        android:contentDescription="@string/required_blood_types_icon"
+                        android:src="@drawable/ic_blood_type" />
+
+                    <TextView
+                        android:id="@+id/requiredBloodTypesTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Required Blood Types"
+                        android:textAppearance="?attr/textAppearanceBody1" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/buttonLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical">
+                    <!-- Buttons will be added here dynamically -->
+                </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:orientation="horizontal">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/registerToDonateButton"
-                style="@style/Widget.Material3.Button"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:textSize="18sp"
-                android:layout_weight="1"
-                android:text="Register as Donator" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/registerAsVolunteerButton"
-                style="@style/Widget.Material3.Button"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:textSize="18sp"
-                android:text="Register as Volunteer" />
-
-        </LinearLayout>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/getDirectionsButton"
-            style="@style/Widget.Material3.Button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textSize="18sp"
-            android:text="Get Directions" />
-
     </LinearLayout>
 </ScrollView>

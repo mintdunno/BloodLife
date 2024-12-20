@@ -6,8 +6,12 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.Button;
@@ -18,29 +22,39 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.minh.bloodlife.R;
 import com.minh.bloodlife.model.DonationSite;
 import com.minh.bloodlife.model.Registration;
+import com.minh.bloodlife.model.User;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class SiteDetailsFragment extends Fragment {
-
     private static final String TAG = "SiteDetailsFragment";
     private static final String ARG_SITE_ID = "siteId";
     private String siteId;
-    private TextView siteNameTextView, siteAddressTextView, siteHoursTextView, requiredBloodTypesTextView, siteDaysTextView;
+    private TextView siteNameTextView, siteAddressTextView, siteHoursTextView, requiredBloodTypesTextView, siteDaysTextView, siteStartEndDateTextView;
+    private LinearLayout buttonLayout;
     private View view;
+    private FirebaseFirestore db;
+    private FirebaseAuth mAuth;
+    private FirebaseUser currentUser;
 
     public static SiteDetailsFragment newInstance(String siteId) {
         SiteDetailsFragment fragment = new SiteDetailsFragment();
@@ -54,6 +68,9 @@ public class SiteDetailsFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        db = FirebaseFirestore.getInstance();
+        mAuth = FirebaseAuth.getInstance();
+        currentUser = mAuth.getCurrentUser();
         if (getArguments() != null) {
             siteId = getArguments().getString(ARG_SITE_ID);
             Log.d(TAG, "onCreate - siteId: " + siteId);
@@ -66,14 +83,129 @@ public class SiteDetailsFragment extends Fragment {
         view = inflater.inflate(R.layout.fragment_site_details, container, false);
         siteNameTextView = view.findViewById(R.id.siteNameTextView);
         siteAddressTextView = view.findViewById(R.id.siteAddressTextView);
+        siteStartEndDateTextView = view.findViewById(R.id.siteStartEndDateTextView);
         siteHoursTextView = view.findViewById(R.id.siteHoursTextView);
         requiredBloodTypesTextView = view.findViewById(R.id.requiredBloodTypesTextView);
-        siteDaysTextView = view.findViewById(R.id.siteDaysTextView); // Initialize the new TextView
+        siteDaysTextView = view.findViewById(R.id.siteDaysTextView);
+        buttonLayout = view.findViewById(R.id.buttonLayout);
 
-        // Fetch and display site details
+        checkUserRoleAndAddButtons();
         fetchSiteDetails();
 
         return view;
+    }
+
+    private void checkUserRoleAndAddButtons() {
+        if (currentUser != null) {
+            String userId = currentUser.getUid();
+            db.collection("users").document(userId).get().addOnCompleteListener(task -> {
+                if (task.isSuccessful() && task.getResult() != null) {
+                    DocumentSnapshot userSnapshot = task.getResult();
+                    User user = userSnapshot.toObject(User.class);
+                    if (user != null) {
+                        if ("Site Manager".equals(user.getUserType())) {
+                            addSiteManagerButtons();
+                        } else {
+                            addDonorButtons();
+                        }
+                    }
+                } else {
+                    Log.e(TAG, "Error fetching user role", task.getException());
+                }
+            });
+        }
+    }
+
+    private void addDonorButtons() {
+        Button registerForYouButton = new Button(getContext());
+        registerForYouButton.setText("Register for You");
+        registerForYouButton.setOnClickListener(v -> {
+            handleButtonAnimation(registerForYouButton);
+            handleRegisterToDonate(1);
+        });
+
+        Button registerForOthersButton = new Button(getContext());
+        registerForOthersButton.setText("Register for Others");
+        registerForOthersButton.setOnClickListener(v -> {
+            handleButtonAnimation(registerForOthersButton);
+            handleRegisterToDonate(2); // Assuming 2 for simplicity, you can adjust
+        });
+
+        Button getDirectionsButton = new Button(getContext());
+        getDirectionsButton.setText("Get Directions");
+        getDirectionsButton.setOnClickListener(v -> {
+            handleButtonAnimation(getDirectionsButton);
+            getDirectionsToSite();
+        });
+
+        buttonLayout.addView(registerForYouButton);
+        buttonLayout.addView(registerForOthersButton);
+        buttonLayout.addView(getDirectionsButton);
+
+        checkIfUserIsRegistered();
+    }
+
+    private void addSiteManagerButtons() {
+        Button registerAsVolunteerButton = new Button(getContext());
+        registerAsVolunteerButton.setText("Register as Volunteer");
+        registerAsVolunteerButton.setOnClickListener(v -> {
+            handleButtonAnimation(registerAsVolunteerButton);
+            handleRegisterAsVolunteer();
+        });
+
+        Button getDirectionsButton = new Button(getContext());
+        getDirectionsButton.setText("Get Directions");
+        getDirectionsButton.setOnClickListener(v -> {
+            handleButtonAnimation(getDirectionsButton);
+            getDirectionsToSite();
+        });
+
+        buttonLayout.addView(registerAsVolunteerButton);
+        buttonLayout.addView(getDirectionsButton);
+
+        checkIfUserIsRegistered();
+    }
+
+    private void handleButtonAnimation(Button button) {
+        Animation animation = AnimationUtils.loadAnimation(getContext(), R.anim.button_click_anim);
+        button.startAnimation(animation);
+    }
+
+    private void checkIfUserIsRegistered() {
+        String userId = mAuth.getCurrentUser().getUid();
+        if (userId != null) {
+            db.collection("registrations")
+                    .whereEqualTo("userId", userId)
+                    .whereEqualTo("siteId", siteId)
+                    .get()
+                    .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                        @Override
+                        public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                            if (task.isSuccessful()) {
+                                if (!task.getResult().isEmpty()) {
+                                    // User is registered, disable the buttons
+                                    disableRegistrationButtons();
+                                }
+                            } else {
+                                Log.e(TAG, "Error checking user registration", task.getException());
+                            }
+                        }
+                    });
+        }
+    }
+
+    private void disableRegistrationButtons() {
+        for (int i = 0; i < buttonLayout.getChildCount(); i++) {
+            View child = buttonLayout.getChildAt(i);
+            if (child instanceof Button) {
+                Button button = (Button) child;
+                if (button.getText().equals("Register for You") ||
+                        button.getText().equals("Register for Others") ||
+                        button.getText().equals("Register as Volunteer")) {
+                    button.setEnabled(false);
+                }
+            }
+        }
     }
 
     @Override
@@ -101,13 +233,11 @@ public class SiteDetailsFragment extends Fragment {
     }
 
     private void fetchSiteDetails() {
-        Log.d(TAG, "fetchSiteDetails called for siteId: " + siteId);
         if (view == null) {
             Log.e(TAG, "View is null in fetchSiteDetails");
             return;
         }
 
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("donationSites").document(siteId)
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
@@ -116,30 +246,12 @@ public class SiteDetailsFragment extends Fragment {
                         if (site != null) {
                             siteNameTextView.setText(site.getSiteName());
                             siteAddressTextView.setText(site.getAddress());
-                            // Format and display the time range
+                            String startEndDate = String.format("%s - %s", site.getStartDate(), site.getEndDate());
+                            siteStartEndDateTextView.setText(startEndDate);
                             String timeRange = String.format("From %s to %s", site.getDonationStartTime(), site.getDonationEndTime());
                             siteHoursTextView.setText(timeRange);
-
-                            requiredBloodTypesTextView.setText("Required Blood Types: " + formatBloodTypes(site.getRequiredBloodTypes()));
-
-                            // Format and display the days of the week
-                            if (site.getDonationDays() != null && !site.getDonationDays().isEmpty()) {
-                                String formattedDays = site.getDonationDays().stream()
-                                        .map(day -> day.substring(0, 3)) // Take the first 3 letters of each day
-                                        .collect(Collectors.joining(", ")); // Join with a comma and space
-                                siteDaysTextView.setText(formattedDays);
-                            } else {
-                                siteDaysTextView.setText("Days: Not specified");
-                            }
-
-                            // Set onClickListeners for buttons
-                            Button registerToDonateButton = view.findViewById(R.id.registerToDonateButton);
-                            Button registerAsVolunteerButton = view.findViewById(R.id.registerAsVolunteerButton);
-                            Button getDirectionsButton = view.findViewById(R.id.getDirectionsButton);
-
-                            registerToDonateButton.setOnClickListener(v -> handleRegisterToDonate(site));
-                            registerAsVolunteerButton.setOnClickListener(v -> handleRegisterAsVolunteer(site));
-                            getDirectionsButton.setOnClickListener(v -> getDirectionsToSite(site));
+                            siteDaysTextView.setText(formatOperatingDays(site.getDonationDays()));
+                            requiredBloodTypesTextView.setText(formatBloodTypes(site.getRequiredBloodTypes()));
                         }
                     } else {
                         Log.e(TAG, "Site not found");
@@ -148,6 +260,13 @@ public class SiteDetailsFragment extends Fragment {
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error fetching site details", e);
                 });
+    }
+
+    private String formatOperatingDays(List<String> donationDays) {
+        if (donationDays == null || donationDays.isEmpty()) {
+            return "Days: Not specified";
+        }
+        return "Days: " + String.join(", ", donationDays);
     }
 
     private String formatBloodTypes(List<String> bloodTypes) {
@@ -166,19 +285,26 @@ public class SiteDetailsFragment extends Fragment {
         return super.onOptionsItemSelected(item);
     }
 
-    private void handleRegisterToDonate(DonationSite site) {
-        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        registerForEvent(userId, site.getSiteId(), false, 1);
+    private void handleRegisterToDonate(int numDonors) {
+        String userId = mAuth.getCurrentUser().getUid();
+        if (userId != null) {
+            registerForEvent(userId, siteId, false, numDonors);
+        } else {
+            Toast.makeText(getContext(), "User not signed in.", Toast.LENGTH_SHORT).show();
+        }
     }
 
-    private void handleRegisterAsVolunteer(DonationSite site) {
-        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        registerForEvent(userId, site.getSiteId(), true, 0);
+    private void handleRegisterAsVolunteer() {
+        String userId = mAuth.getCurrentUser().getUid();
+        if (userId != null) {
+            registerForEvent(userId, siteId, true, 0);
+        } else {
+            Toast.makeText(getContext(), "User not signed in.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void registerForEvent(String userId, String siteId, boolean isVolunteer, int numDonors) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-
         Map<String, Object> registration = new HashMap<>();
         registration.put("userId", userId);
         registration.put("siteId", siteId);
@@ -189,8 +315,8 @@ public class SiteDetailsFragment extends Fragment {
         db.collection("registrations")
                 .add(registration)
                 .addOnSuccessListener(documentReference -> {
-                    Log.d(TAG, "Registration added with ID: " + documentReference.getId());
                     Toast.makeText(getContext(), "Registration successful", Toast.LENGTH_SHORT).show();
+                    disableRegistrationButtons();
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error adding registration", e);
@@ -198,20 +324,34 @@ public class SiteDetailsFragment extends Fragment {
                 });
     }
 
-    private void getDirectionsToSite(DonationSite site) {
-        if (site != null && site.getLocation() != null) {
-            double latitude = site.getLocation().getLatitude();
-            double longitude = site.getLocation().getLongitude();
-            Uri gmmIntentUri = Uri.parse("google.navigation:q=" + latitude + "," + longitude);
-            Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
-            mapIntent.setPackage("com.google.android.apps.maps");
-            if (mapIntent.resolveActivity(getContext().getPackageManager()) != null) {
-                startActivity(mapIntent);
-            } else {
-                Toast.makeText(getContext(), "Google Maps app not found.", Toast.LENGTH_SHORT).show();
-            }
+    private void getDirectionsToSite() {
+        if (siteId != null) {
+            db.collection("donationSites").document(siteId).get().addOnSuccessListener(documentSnapshot -> {
+                if (documentSnapshot.exists()) {
+                    DonationSite site = documentSnapshot.toObject(DonationSite.class);
+                    if (site != null && site.getLocation() != null) {
+                        double latitude = site.getLocation().getLatitude();
+                        double longitude = site.getLocation().getLongitude();
+                        Uri gmmIntentUri = Uri.parse("google.navigation:q=" + latitude + "," + longitude);
+                        Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+                        mapIntent.setPackage("com.google.android.apps.maps");
+                        if (mapIntent.resolveActivity(getContext().getPackageManager()) != null) {
+                            startActivity(mapIntent);
+                        } else {
+                            Toast.makeText(getContext(), "Google Maps app not found.", Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        Toast.makeText(getContext(), "Site location is not available.", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(getContext(), "Site not found.", Toast.LENGTH_SHORT).show();
+                }
+            }).addOnFailureListener(e -> {
+                Log.e(TAG, "Error fetching site details for directions", e);
+                Toast.makeText(getContext(), "Error fetching site details.", Toast.LENGTH_SHORT).show();
+            });
         } else {
-            Toast.makeText(getContext(), "Site location is not available.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "Site ID is not available.", Toast.LENGTH_SHORT).show();
         }
     }
 }

@@ -21,4 +21,5 @@
     <color name="tertiaryColor">#F78764</color>
     <color name="your_primary_color">#E91E63</color>
     <color name="your_secondary_color">#00BCD4</color>
+    <color name="card_background">#FFFFFF</color>
 </resources>
