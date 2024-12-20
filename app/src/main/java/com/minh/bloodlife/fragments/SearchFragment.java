@@ -180,29 +180,31 @@ public class SearchFragment extends Fragment {
         Location userLocation = mapsFragment != null ? mapsFragment.getLastKnownLocation() : null;
         List<String> selectedBloodTypes = getSelectedBloodTypes();
         boolean isNearMeSelected = filterChipGroup.getCheckedChipIds().contains(R.id.chipNearMe);
-        // Log filter values for debugging:
+
         Log.d(TAG, "Selected blood types: " + selectedBloodTypes);
         Log.d(TAG, "Is Near Me selected: " + isNearMeSelected);
         Log.d(TAG, "User location: " + userLocation);
         Log.d(TAG, "Start Date: " + startDateEditText.getText().toString());
         Log.d(TAG, "End Date: " + endDateEditText.getText().toString());
-        com.google.firebase.firestore.Query firestoreQuery = db.collection("donationSites");
-        // Apply filters based on selected criteria
-        // 1. Search Text Filter:
-        if (!query.isEmpty()) {
-            Log.d(TAG, "Applying search text filter"); // Debug log
-            firestoreQuery = firestoreQuery.whereGreaterThanOrEqualTo("searchableName", query.toLowerCase())
 
+        com.google.firebase.firestore.Query firestoreQuery = db.collection("donationSites");
+
+        // 1. Apply search text filter
+        if (!query.isEmpty()) {
+            Log.d(TAG, "Applying search text filter");
+            firestoreQuery = firestoreQuery.whereGreaterThanOrEqualTo("searchableName", query.toLowerCase())
                     .whereLessThanOrEqualTo("searchableName", query.toLowerCase() + "\uf8ff");
         }
-        // 2. Blood Type Filter:
+
+        // 2. Fetch sites containing any of the selected blood types
         if (!selectedBloodTypes.isEmpty()) {
-            Log.d(TAG, "Applying blood type filter"); // Debug log
+            Log.d(TAG, "Applying blood type filter: " + selectedBloodTypes);
             firestoreQuery = firestoreQuery.whereArrayContainsAny("requiredBloodTypes", selectedBloodTypes);
         }
-        // 3. "Near Me" Filter:
+
+        // 3. Apply other filters (Near Me, date range) as before...
         if (isNearMeSelected && userLocation != null) {
-            Log.d(TAG, "Applying 'Near Me' filter"); // Debug log
+            Log.d(TAG, "Applying 'Near Me' filter");
             GeoPoint geoPoint = new GeoPoint(userLocation.getLatitude(), userLocation.getLongitude());
             double radius = 10; // Adjusted radius to 10 km
             double lat = geoPoint.getLatitude();
@@ -216,9 +218,8 @@ public class SearchFragment extends Fragment {
                     .whereLessThanOrEqualTo("location", northEast);
         }
 
-        // 4. Date Range Filter:
         if (!startDateEditText.getText().toString().isEmpty() && !endDateEditText.getText().toString().isEmpty()) {
-            Log.d(TAG, "Applying date range filter"); // Debug log
+            Log.d(TAG, "Applying date range filter");
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
             try {
                 Date startDate = sdf.parse(startDateEditText.getText().toString());
@@ -230,8 +231,9 @@ public class SearchFragment extends Fragment {
                 Log.e(TAG, "Error parsing date", e);
             }
         }
-        // Log the constructed query for debugging
+
         Log.d(TAG, "Firestore query: " + firestoreQuery.toString());
+
         // Execute the query
         firestoreQuery.get().addOnCompleteListener(task -> {
             searchProgressBar.setVisibility(View.GONE);
@@ -240,7 +242,11 @@ public class SearchFragment extends Fragment {
                 for (QueryDocumentSnapshot document : task.getResult()) {
                     DonationSite site = document.toObject(DonationSite.class);
                     site.setSiteId(document.getId());
-                    siteList.add(site);
+
+                    // Post-process: Ensure site contains all selected blood types
+                    if (site.getRequiredBloodTypes().containsAll(selectedBloodTypes)) {
+                        siteList.add(site);
+                    }
                 }
                 adapter.notifyDataSetChanged();
             } else {
@@ -250,6 +256,7 @@ public class SearchFragment extends Fragment {
             }
         });
     }
+
 
     private List<String> getSelectedBloodTypes() {
         List<String> selectedTypes = new ArrayList<>();
