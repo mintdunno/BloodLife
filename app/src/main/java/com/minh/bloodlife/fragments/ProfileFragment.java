@@ -44,6 +44,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.minh.bloodlife.R;
+import com.minh.bloodlife.activities.LoginActivity;
 import com.minh.bloodlife.model.User;
 
 import java.io.ByteArrayOutputStream;
@@ -324,6 +325,10 @@ public class ProfileFragment extends Fragment {
 
     private void signOut() {
         mAuth.signOut();
+        // Redirect to LoginActivity and finish all other activities
+        Intent intent = new Intent(getActivity(), LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
         getActivity().finish();
     }
 
