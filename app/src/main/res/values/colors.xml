@@ -22,4 +22,5 @@
     <color name="your_primary_color">#E91E63</color>
     <color name="your_secondary_color">#00BCD4</color>
     <color name="card_background">#FFFFFF</color>
+    <color name="button_background_color">#C70039</color>
 </resources>

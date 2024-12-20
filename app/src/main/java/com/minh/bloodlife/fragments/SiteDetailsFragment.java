@@ -1,6 +1,7 @@
 package com.minh.bloodlife.fragments;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -20,6 +21,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -117,22 +119,19 @@ public class SiteDetailsFragment extends Fragment {
     }
 
     private void addDonorButtons() {
-        Button registerForYouButton = new Button(getContext());
-        registerForYouButton.setText("Register for You");
+        Button registerForYouButton = createStyledButton("Register for You");
         registerForYouButton.setOnClickListener(v -> {
             handleButtonAnimation(registerForYouButton);
             handleRegisterToDonate(1);
         });
 
-        Button registerForOthersButton = new Button(getContext());
-        registerForOthersButton.setText("Register for Others");
+        Button registerForOthersButton = createStyledButton("Register for Others");
         registerForOthersButton.setOnClickListener(v -> {
             handleButtonAnimation(registerForOthersButton);
-            handleRegisterToDonate(2); // Assuming 2 for simplicity, you can adjust
+            handleRegisterToDonate(2);
         });
 
-        Button getDirectionsButton = new Button(getContext());
-        getDirectionsButton.setText("Get Directions");
+        Button getDirectionsButton = createStyledButton("Get Directions");
         getDirectionsButton.setOnClickListener(v -> {
             handleButtonAnimation(getDirectionsButton);
             getDirectionsToSite();
@@ -146,15 +145,13 @@ public class SiteDetailsFragment extends Fragment {
     }
 
     private void addSiteManagerButtons() {
-        Button registerAsVolunteerButton = new Button(getContext());
-        registerAsVolunteerButton.setText("Register as Volunteer");
+        Button registerAsVolunteerButton = createStyledButton("Register as Volunteer");
         registerAsVolunteerButton.setOnClickListener(v -> {
             handleButtonAnimation(registerAsVolunteerButton);
             handleRegisterAsVolunteer();
         });
 
-        Button getDirectionsButton = new Button(getContext());
-        getDirectionsButton.setText("Get Directions");
+        Button getDirectionsButton = createStyledButton("Get Directions");
         getDirectionsButton.setOnClickListener(v -> {
             handleButtonAnimation(getDirectionsButton);
             getDirectionsToSite();
@@ -164,6 +161,29 @@ public class SiteDetailsFragment extends Fragment {
         buttonLayout.addView(getDirectionsButton);
 
         checkIfUserIsRegistered();
+    }
+    private Button createStyledButton(String text) {
+        Button button = new Button(getContext());
+        button.setText(text);
+        button.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(getContext(), R.color.button_background_color)));
+        button.setTextColor(ContextCompat.getColor(getContext(), R.color.white)); // Set text color to white
+
+        // Set button width to match parent (fill the width of buttonLayout)
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        params.setMargins(0, 16, 0, 0);
+        button.setLayoutParams(params);
+
+        // Increase padding
+        int paddingInPixels = (int) (16 * getResources().getDisplayMetrics().density); // Convert dp to px
+        button.setPadding(paddingInPixels, paddingInPixels, paddingInPixels, paddingInPixels);
+
+        // Increase text size
+        button.setTextSize(18); // Increase text size
+
+        return button;
     }
 
     private void handleButtonAnimation(Button button) {
