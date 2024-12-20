@@ -57,4 +57,8 @@ dependencies {
     //noinspection GradleDependency
     implementation ("com.google.android.gms:play-services-location:21.3.0")
     implementation("com.google.android.material:material:1.4.0")
+
+    implementation ("de.hdodenhof:circleimageview:3.1.0")
+    implementation ("com.github.bumptech.glide:glide:4.13.0")
+    annotationProcessor ("com.github.bumptech.glide:compiler:4.13.0")
 }

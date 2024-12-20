@@ -19,4 +19,6 @@
     <color name="primaryColor">#DA4167</color>
     <color name="secondaryColor">#F4D35E</color>
     <color name="tertiaryColor">#F78764</color>
+    <color name="your_primary_color">#E91E63</color>
+    <color name="your_secondary_color">#00BCD4</color>
 </resources>
