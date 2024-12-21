@@ -83,4 +83,7 @@
     <string name="blood_type_optional">Blood Type (Optional)</string>
     <string name="donation_date">Donation Date</string>
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="contact_icon">Contact Icon</string>
+    <string name="description_icon">Description Icon</string>
+    <string name="contact_information">Contact Information</string>
 </resources>
