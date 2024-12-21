@@ -38,8 +38,11 @@ import com.minh.bloodlife.R;
 import com.minh.bloodlife.model.DonationSite;
 import com.minh.bloodlife.model.Registration;
 import com.minh.bloodlife.model.User;
+import com.minh.bloodlife.fragments.RegistrationFormFragment;
+
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -122,13 +125,15 @@ public class SiteDetailsFragment extends Fragment {
         Button registerForYouButton = createStyledButton("Register for You");
         registerForYouButton.setOnClickListener(v -> {
             handleButtonAnimation(registerForYouButton);
+            // Directly call handleRegisterToDonate with numDonors set to 1
             handleRegisterToDonate(1);
         });
 
         Button registerForOthersButton = createStyledButton("Register for Others");
         registerForOthersButton.setOnClickListener(v -> {
             handleButtonAnimation(registerForOthersButton);
-            handleRegisterToDonate(2);
+            // Open RegistrationFormFragment for registering others
+            openRegistrationFormFragment();
         });
 
         Button getDirectionsButton = createStyledButton("Get Directions");
@@ -306,12 +311,50 @@ public class SiteDetailsFragment extends Fragment {
     }
 
     private void handleRegisterToDonate(int numDonors) {
-        String userId = mAuth.getCurrentUser().getUid();
-        if (userId != null) {
-            registerForEvent(userId, siteId, false, numDonors);
+        if (currentUser != null) {
+            if (numDonors == 1) {
+                // Directly register the current user
+                registerCurrentUser(currentUser.getUid(), siteId);
+            } else {
+                // Open a form or dialog to register multiple donors
+                openRegistrationFormFragment();
+            }
         } else {
             Toast.makeText(getContext(), "User not signed in.", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void registerCurrentUser(String userId, String siteId) {
+        // Assuming the current user is always included as the first registrant
+        Map<String, Object> registrant = new HashMap<>();
+        registrant.put("firstName", currentUser.getDisplayName()); // Or fetch from user profile
+        registrant.put("lastName", ""); // Add last name if available
+        registrant.put("email", currentUser.getEmail());
+        registrant.put("isDonor", true); // Marking the registering user as a donor
+
+        List<Map<String, Object>> registrants = new ArrayList<>();
+        registrants.add(registrant);
+
+        Registration registration = new Registration(userId, siteId, new Date(), false, 1, registrants);
+
+        db.collection("registrations")
+                .add(registration)
+                .addOnSuccessListener(documentReference -> {
+                    Toast.makeText(getContext(), "Registration successful", Toast.LENGTH_SHORT).show();
+                    disableRegistrationButtons();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error adding registration", e);
+                    Toast.makeText(getContext(), "Registration failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void openRegistrationFormFragment() {
+        RegistrationFormFragment registrationFormFragment = RegistrationFormFragment.newInstance(siteId);
+        getActivity().getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragmentContainer, registrationFormFragment) // Use your actual container ID
+                .addToBackStack(null)
+                .commit();
     }
 
     private void handleRegisterAsVolunteer() {

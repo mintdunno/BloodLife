@@ -76,4 +76,11 @@
         <item>Site Manager</item>
         <item>Super User</item>
     </string-array>
+    <string name="number_of_donors">Number of Donors</string>
+    <string name="register_to_donate">Register to Donate</string>
+    <string name="phone_number">Phone Number (Required)</string>
+    <string name="email_optional">Email (Optional)</string>
+    <string name="blood_type_optional">Blood Type (Optional)</string>
+    <string name="donation_date">Donation Date</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
