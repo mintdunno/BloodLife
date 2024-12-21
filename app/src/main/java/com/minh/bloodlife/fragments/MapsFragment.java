@@ -35,8 +35,9 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.minh.bloodlife.R;
 import com.minh.bloodlife.model.DonationSite;
 
-import java.util.List;
-
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 
 public class MapsFragment extends Fragment implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
@@ -90,9 +91,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
 
         googleMap.setOnMarkerClickListener(this);
     }
-    public Location getLastKnownLocation() {
-        return lastKnownLocation;
-    }
 
     private void requestLocationPermissions() {
         requestPermissionLauncher.launch(new String[]{
@@ -120,6 +118,10 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
         } else {
             requestLocationPermissions();
         }
+    }
+
+    public Location getLastKnownLocation() {
+        return lastKnownLocation;
     }
 
     private void updateLocationUI() {
@@ -156,6 +158,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
 
     private void fetchDonationSites() {
         loadingIndicator.setVisibility(View.VISIBLE);
+        Date currentDate = Calendar.getInstance().getTime();
         db.collection("donationSites")
                 .get()
                 .addOnCompleteListener(task -> {
@@ -166,16 +169,23 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
                             String siteId = document.getId();
                             site.setSiteId(siteId);
 
-                            if (site.getLocation() != null) {
-                                LatLng siteLatLng = new LatLng(site.getLocation().getLatitude(), site.getLocation().getLongitude());
-                                Marker marker = googleMap.addMarker(new MarkerOptions()
-                                        .position(siteLatLng)
-                                        .title(site.getSiteName())
-                                        .snippet(site.getAddress())
-                                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.location_pin)));
-                                if (marker != null) {
-                                    marker.setTag(siteId);
+                            try {
+                                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                                Date siteEndDate = sdf.parse(site.getEndDate());
+
+                                if (siteEndDate != null && siteEndDate.after(currentDate)) {
+                                    LatLng siteLatLng = new LatLng(site.getLocation().getLatitude(), site.getLocation().getLongitude());
+                                    Marker marker = googleMap.addMarker(new MarkerOptions()
+                                            .position(siteLatLng)
+                                            .title(site.getSiteName())
+                                            .snippet(site.getAddress())
+                                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.location_pin)));
+                                    if (marker != null) {
+                                        marker.setTag(siteId);
+                                    }
                                 }
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error parsing end date for site: " + siteId, e);
                             }
                         }
                     } else {
