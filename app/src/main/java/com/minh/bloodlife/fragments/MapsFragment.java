@@ -8,12 +8,13 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
@@ -28,10 +29,6 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -52,18 +49,16 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
     private FusedLocationProviderClient fusedLocationClient;
     private Location lastKnownLocation;
     private FirebaseFirestore db;
+    private ProgressBar loadingIndicator;
 
     private final ActivityResultLauncher<String[]> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), permissions -> {
                 if (permissions.get(Manifest.permission.ACCESS_FINE_LOCATION) && permissions.get(Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                    // Both permissions are granted
                     Log.d(TAG, "Location permissions granted");
                     enableMyLocation();
                     getMyLastLocation();
                 } else {
-                    // Explain to the user that the feature is unavailable because the
-                    // feature requires a permission that the user has denied.
-                    Toast.makeText(getContext(), "Location permission is required to show your location on the map", Toast.LENGTH_SHORT).show();
+                    showPermissionRationaleDialog();
                 }
             });
 
@@ -76,6 +71,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
 
+        loadingIndicator = view.findViewById(R.id.loadingIndicator);
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
         db = FirebaseFirestore.getInstance();
 
@@ -86,17 +82,16 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
     public void onMapReady(GoogleMap map) {
         googleMap = map;
 
-        // Turn on the My Location layer and the related control on the map.
         updateLocationUI();
 
-        // Get the current location of the device and set the map's camera position.
         getMyLastLocation();
 
-        // Fetch and display donation sites
         fetchDonationSites();
 
-        // Set a marker click listener
         googleMap.setOnMarkerClickListener(this);
+    }
+    public Location getLastKnownLocation() {
+        return lastKnownLocation;
     }
 
     private void requestLocationPermissions() {
@@ -112,25 +107,19 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
                     .addOnSuccessListener(location -> {
                         if (location != null) {
                             lastKnownLocation = location;
-                            Log.d(TAG, "Last known location: " + lastKnownLocation);
                             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
                                     new LatLng(location.getLatitude(), location.getLongitude()), DEFAULT_ZOOM));
                         } else {
                             Log.d(TAG, "Current location is null. Using defaults.");
-                            // Use a default location or handle the null case appropriately
                         }
                     })
                     .addOnFailureListener(e -> {
-                        Log.e(TAG, "Exception: " + e.getMessage());
-                        // Handle the error, perhaps using a default location or showing an error message
+                        Log.e(TAG, "Error fetching location: " + e.getMessage());
+                        Toast.makeText(getContext(), "Failed to fetch location.", Toast.LENGTH_SHORT).show();
                     });
         } else {
             requestLocationPermissions();
         }
-    }
-
-    public Location getLastKnownLocation() {
-        return lastKnownLocation;
     }
 
     private void updateLocationUI() {
@@ -148,7 +137,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
                 requestLocationPermissions();
             }
         } catch (SecurityException e) {
-            Log.e(TAG, "Exception: " + e.getMessage());
+            Log.e(TAG, "Error updating location UI", e);
         }
     }
 
@@ -159,29 +148,23 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             googleMap.setMyLocationEnabled(true);
-            googleMap.getUiSettings().setMyLocationButtonEnabled(true); // Enable the button
+            googleMap.getUiSettings().setMyLocationButtonEnabled(true);
         } else {
-            // Request permission or handle the case where it's not granted
             requestLocationPermissions();
         }
     }
 
     private void fetchDonationSites() {
+        loadingIndicator.setVisibility(View.VISIBLE);
         db.collection("donationSites")
                 .get()
                 .addOnCompleteListener(task -> {
+                    loadingIndicator.setVisibility(View.GONE);
                     if (task.isSuccessful()) {
                         for (QueryDocumentSnapshot document : task.getResult()) {
                             DonationSite site = document.toObject(DonationSite.class);
-                            // Set the document ID as the site ID
                             String siteId = document.getId();
-                            site.setSiteId(document.getId());
-
-                            // Update the document with the lowercase site name for searching
-                            db.collection("donationSites").document(siteId)
-                                    .update("searchableName", site.getSiteName().toLowerCase())
-                                    .addOnSuccessListener(aVoid -> Log.d(TAG, "DocumentSnapshot successfully updated with searchableName!"))
-                                    .addOnFailureListener(e -> Log.w(TAG, "Error updating document with searchableName", e));
+                            site.setSiteId(siteId);
 
                             if (site.getLocation() != null) {
                                 LatLng siteLatLng = new LatLng(site.getLocation().getLatitude(), site.getLocation().getLongitude());
@@ -191,29 +174,30 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
                                         .snippet(site.getAddress())
                                         .icon(BitmapDescriptorFactory.fromResource(R.drawable.location_pin)));
                                 if (marker != null) {
-                                    marker.setTag(siteId); // Associate the site ID with the marker
+                                    marker.setTag(siteId);
                                 }
                             }
                         }
                     } else {
-                        Log.w(TAG, "Error getting documents.", task.getException());
                         Toast.makeText(getContext(), "Failed to load donation sites", Toast.LENGTH_SHORT).show();
+                        Log.e(TAG, "Error fetching donation sites", task.getException());
                     }
                 });
     }
-    // Helper method to format the list of blood types for display
-    private String formatRequiredBloodTypes(List<String> bloodTypes) {
-        if (bloodTypes == null || bloodTypes.isEmpty()) {
-            return "No blood types specified";
-        }
-        return "Required: " + String.join(", ", bloodTypes);
+
+    private void showPermissionRationaleDialog() {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Location Permission Needed")
+                .setMessage("This app requires location permissions to show your current location on the map.")
+                .setPositiveButton("OK", (dialog, which) -> requestLocationPermissions())
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .create()
+                .show();
     }
 
-    // In MapsFragment.java
     @Override
     public boolean onMarkerClick(Marker marker) {
         String siteId = (String) marker.getTag();
-        Log.d(TAG, "Marker clicked - siteId: " + siteId); // Add this log
         if (siteId != null) {
             SiteDetailsFragment siteDetailsFragment = SiteDetailsFragment.newInstance(siteId);
             FragmentTransaction transaction = requireActivity().getSupportFragmentManager().beginTransaction();
@@ -249,7 +233,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
     }
 
     @Override
-    public void onSaveInstanceState(Bundle outState) {
+    public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         mapView.onSaveInstanceState(outState);
     }
