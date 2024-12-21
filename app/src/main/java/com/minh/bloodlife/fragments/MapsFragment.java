@@ -52,14 +52,15 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
     private FirebaseFirestore db;
     private ProgressBar loadingIndicator;
 
+    // Launcher to request location permissions dynamically
     private final ActivityResultLauncher<String[]> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), permissions -> {
                 if (permissions.get(Manifest.permission.ACCESS_FINE_LOCATION) && permissions.get(Manifest.permission.ACCESS_COARSE_LOCATION)) {
                     Log.d(TAG, "Location permissions granted");
-                    enableMyLocation();
-                    getMyLastLocation();
+                    enableMyLocation(); // Enable location-related features
+                    getMyLastLocation(); // Fetch and move camera to the user's last known location
                 } else {
-                    showPermissionRationaleDialog();
+                    showPermissionRationaleDialog(); // Show dialog if permissions are denied
                 }
             });
 
@@ -68,13 +69,14 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_maps, container, false);
 
+        // Initialize UI components
         mapView = view.findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
-        mapView.getMapAsync(this);
+        mapView.getMapAsync(this); // Load the map asynchronously
 
-        loadingIndicator = view.findViewById(R.id.loadingIndicator);
+        loadingIndicator = view.findViewById(R.id.loadingIndicator); // Show loading when fetching sites
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
-        db = FirebaseFirestore.getInstance();
+        db = FirebaseFirestore.getInstance(); // Initialize Firestore
 
         return view;
     }
@@ -83,16 +85,15 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
     public void onMapReady(GoogleMap map) {
         googleMap = map;
 
-        updateLocationUI();
+        updateLocationUI(); // Configure location settings on the map
+        getMyLastLocation(); // Fetch user's last known location
+        fetchDonationSites(); // Fetch and display donation sites as markers
 
-        getMyLastLocation();
-
-        fetchDonationSites();
-
-        googleMap.setOnMarkerClickListener(this);
+        googleMap.setOnMarkerClickListener(this); // Handle marker click events
     }
 
     private void requestLocationPermissions() {
+        // Request fine and coarse location permissions
         requestPermissionLauncher.launch(new String[]{
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION
@@ -100,11 +101,13 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
     }
 
     private void getMyLastLocation() {
+        // Fetch user's last known location if permissions are granted
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             fusedLocationClient.getLastLocation()
                     .addOnSuccessListener(location -> {
                         if (location != null) {
                             lastKnownLocation = location;
+                            // Move the camera to user's current location
                             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
                                     new LatLng(location.getLatitude(), location.getLongitude()), DEFAULT_ZOOM));
                         } else {
@@ -120,11 +123,13 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
         }
     }
 
+    // Public method to expose the last known location to other fragments
     public Location getLastKnownLocation() {
         return lastKnownLocation;
     }
 
     private void updateLocationUI() {
+        // Update map's location UI features based on permissions
         if (googleMap == null) {
             return;
         }
@@ -144,6 +149,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
     }
 
     private void enableMyLocation() {
+        // Enable MyLocation layer on the map
         if (googleMap == null) {
             return;
         }
@@ -159,6 +165,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
     private void fetchDonationSites() {
         loadingIndicator.setVisibility(View.VISIBLE);
         Date currentDate = Calendar.getInstance().getTime();
+        // Fetch donation sites from Firestore
         db.collection("donationSites")
                 .get()
                 .addOnCompleteListener(task -> {
@@ -173,6 +180,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
                                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
                                 Date siteEndDate = sdf.parse(site.getEndDate());
 
+                                // Only display sites whose end date is after the current date
                                 if (siteEndDate != null && siteEndDate.after(currentDate)) {
                                     LatLng siteLatLng = new LatLng(site.getLocation().getLatitude(), site.getLocation().getLongitude());
                                     Marker marker = googleMap.addMarker(new MarkerOptions()
@@ -181,7 +189,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
                                             .snippet(site.getAddress())
                                             .icon(BitmapDescriptorFactory.fromResource(R.drawable.location_pin)));
                                     if (marker != null) {
-                                        marker.setTag(siteId);
+                                        marker.setTag(siteId); // Associate marker with site ID
                                     }
                                 }
                             } catch (Exception e) {
@@ -196,6 +204,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
     }
 
     private void showPermissionRationaleDialog() {
+        // Show a rationale dialog for location permissions
         new AlertDialog.Builder(requireContext())
                 .setTitle("Location Permission Needed")
                 .setMessage("This app requires location permissions to show your current location on the map.")
@@ -207,6 +216,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback, Google
 
     @Override
     public boolean onMarkerClick(Marker marker) {
+        // Handle marker clicks by navigating to the site details fragment
         String siteId = (String) marker.getTag();
         if (siteId != null) {
             SiteDetailsFragment siteDetailsFragment = SiteDetailsFragment.newInstance(siteId);
