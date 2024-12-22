@@ -1,9 +1,13 @@
 package com.minh.bloodlife.fragments;
 
+import android.app.AlertDialog;
 import android.app.DatePickerDialog;
+import android.content.DialogInterface;
 import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -13,7 +17,9 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.DatePicker;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -307,12 +313,61 @@ public class RegistrationFormFragment extends Fragment {
         db.collection("registrations")
                 .add(registration)
                 .addOnSuccessListener(documentReference -> {
-                    Toast.makeText(getContext(), "Registration successful", Toast.LENGTH_SHORT).show();
-                    // Navigate back or to another appropriate screen
+                    // Show a success dialog here
+                    showSuccessDialog();
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(getContext(), "Registration failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
+    }
+
+    private void showSuccessDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle("Success");
+
+        // Create a LinearLayout for the custom view
+        LinearLayout layout = new LinearLayout(getContext());
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setGravity(Gravity.CENTER);
+        layout.setPadding(60, 60, 60, 60);
+
+        // Create and add the ImageView
+        ImageView imageView = new ImageView(getContext());
+        imageView.setImageResource(R.drawable.ic_check_circle);
+        imageView.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        layout.addView(imageView);
+
+        // Create and add the TextView
+        TextView textView = new TextView(getContext());
+        textView.setText(R.string.register_success);
+        textView.setGravity(Gravity.CENTER);
+        textView.setTextSize(18);
+        textView.setTextColor(Color.BLACK);
+        layout.addView(textView);
+
+        builder.setView(layout);
+
+        // Set up the OK button
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+                // Navigate back to the Site Details Fragment
+                if (isAdded() && getActivity() != null) {
+                    getActivity().getSupportFragmentManager().popBackStack();
+                }
+            }
+        });
+
+        // Create and show the dialog
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        // Optionally, change properties of the button after it's shown
+        Button positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE);
+        if (positiveButton != null) {
+            positiveButton.setTextColor(getResources().getColor(R.color.black));
+        }
     }
     private Date parseDate(String dateString) {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());

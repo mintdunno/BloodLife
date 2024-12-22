@@ -93,6 +93,7 @@
     <string name="contact_phone_icon">Contact Phone Icon</string>
     <string name="contact_email_icon">Contact Email Icon</string>
     <string name="status_icon">Status Icon</string>
+    <string name="register_success">"Register Successfully"</string>
     <string-array name="site_status_options">
         <item>Active</item>
         <item>Inactive</item>
