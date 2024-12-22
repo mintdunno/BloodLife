@@ -32,7 +32,7 @@
         android:id="@+id/filterChipGroup"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:singleSelection="true">
+        app:singleSelection="false">
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chipNearMe"
@@ -69,7 +69,6 @@
             android:layout_height="wrap_content"
             android:text="@string/blood_type_ab" />
 
-        <!-- Add the "My Sites" chip -->
         <com.google.android.material.chip.Chip
             android:id="@+id/chipMySites"
             style="@style/Widget.MaterialComponents.Chip.Filter"
