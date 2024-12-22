@@ -32,63 +32,53 @@
         android:id="@+id/filterChipGroup"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="8dp"
-        app:singleSelection="false"> <!-- Enable multiple selection -->
+        app:singleSelection="true">
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chipNearMe"
             style="@style/Widget.MaterialComponents.Chip.Filter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Near Me"
-            app:chipIcon="@drawable/ic_location"
-            app:chipIconTint="@color/primary_red"
-            app:closeIconVisible="false" />
+            android:text="@string/near_me" />
 
         <com.google.android.material.chip.Chip
-            android:id="@+id/chipTypeA"
+            android:id="@+id/chipBloodTypeA"
             style="@style/Widget.MaterialComponents.Chip.Filter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="A"
-            app:chipIcon="@drawable/ic_blood_type"
-            app:chipIconTint="@color/primary_red"
-            app:closeIconVisible="false" />
+            android:text="@string/blood_type_a" />
 
         <com.google.android.material.chip.Chip
-            android:id="@+id/chipTypeB"
+            android:id="@+id/chipBloodTypeB"
             style="@style/Widget.MaterialComponents.Chip.Filter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="B"
-            app:chipIcon="@drawable/ic_blood_type"
-            app:chipIconTint="@color/primary_red"
-            app:closeIconVisible="false" />
+            android:text="@string/blood_type_b" />
 
         <com.google.android.material.chip.Chip
-            android:id="@+id/chipTypeAB"
+            android:id="@+id/chipBloodTypeO"
             style="@style/Widget.MaterialComponents.Chip.Filter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="AB"
-            app:chipIcon="@drawable/ic_blood_type"
-            app:chipIconTint="@color/primary_red"
-            app:closeIconVisible="false" />
+            android:text="@string/blood_type_o" />
 
         <com.google.android.material.chip.Chip
-            android:id="@+id/chipTypeO"
+            android:id="@+id/chipBloodTypeAB"
             style="@style/Widget.MaterialComponents.Chip.Filter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="O"
-            app:chipIcon="@drawable/ic_blood_type"
-            app:chipIconTint="@color/primary_red"
-            app:closeIconVisible="false" />
+            android:text="@string/blood_type_ab" />
+
+        <!-- Add the "My Sites" chip -->
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipMySites"
+            style="@style/Widget.MaterialComponents.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/my_sites"
+            android:visibility="gone"/>
     </com.google.android.material.chip.ChipGroup>
 
-
-    <!-- Date Filters -->
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

@@ -94,6 +94,11 @@
     <string name="contact_email_icon">Contact Email Icon</string>
     <string name="status_icon">Status Icon</string>
     <string name="register_success">"Register Successfully"</string>
+    <string name="my_sites">My Sites</string>
+    <string name="blood_type_o">O</string>
+    <string name="blood_type_ab">AB</string>
+    <string name="blood_type_b">B</string>
+    <string name="blood_type_a">A</string>
     <string-array name="site_status_options">
         <item>Active</item>
         <item>Inactive</item>

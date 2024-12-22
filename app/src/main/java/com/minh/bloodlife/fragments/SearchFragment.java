@@ -20,11 +20,15 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -33,6 +37,7 @@ import com.minh.bloodlife.R;
 import com.minh.bloodlife.activities.MainActivity;
 import com.minh.bloodlife.adapter.DonationSiteAdapter;
 import com.minh.bloodlife.model.DonationSite;
+import com.minh.bloodlife.model.User;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -57,6 +62,9 @@ public class SearchFragment extends Fragment {
     private Calendar startCalendar, endCalendar;
     private ProgressBar searchProgressBar;
     private Button resetFiltersButton;
+    private Chip chipMySites;
+    private boolean isSiteManager = false;
+    private FirebaseUser currentUser;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -68,19 +76,24 @@ public class SearchFragment extends Fragment {
         startDateEditText = view.findViewById(R.id.startDateEditText);
         endDateEditText = view.findViewById(R.id.endDateEditText);
         searchProgressBar = view.findViewById(R.id.searchProgressBar);
-
         resetFiltersButton = view.findViewById(R.id.resetFiltersButton);
+        chipMySites = view.findViewById(R.id.chipMySites);
+
         // Initialize Firestore
         db = FirebaseFirestore.getInstance();
+
         // Initialize the adapter and set it to the RecyclerView
         siteList = new ArrayList<>();
         adapter = new DonationSiteAdapter(siteList);
         searchResultsRecyclerView.setAdapter(adapter);
         searchResultsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+
         startCalendar = Calendar.getInstance();
         endCalendar = Calendar.getInstance();
+
         startDateEditText.setOnClickListener(v -> showDatePickerDialog(true));
         endDateEditText.setOnClickListener(v -> showDatePickerDialog(false));
+
         // Set up item click listener for the RecyclerView
         adapter.setOnItemClickListener(new DonationSiteAdapter.OnItemClickListener() {
             @Override
@@ -91,34 +104,71 @@ public class SearchFragment extends Fragment {
                 transaction.replace(R.id.fragmentContainer, siteDetailsFragment);
                 transaction.addToBackStack(null); // Optional: Add to back stack for navigation
                 transaction.commit();
-
             }
         });
+
         // Add a TextWatcher to the search bar
         searchText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
                 // Not used
             }
+
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 String searchQuery = s.toString().trim();
                 performSearch(searchQuery);
             }
+
             @Override
             public void afterTextChanged(Editable s) {
                 // Not used
             }
         });
+
         // Handle filter chip selections
         filterChipGroup.setOnCheckedStateChangeListener((group, checkedIds) -> {
+            if (checkedIds.contains(R.id.chipMySites)) {
+                // If "My Sites" is checked, uncheck the other chips
+                for (int i = 0; i < filterChipGroup.getChildCount(); i++) {
+                    Chip chip = (Chip) filterChipGroup.getChildAt(i);
+                    if (chip.getId() != R.id.chipMySites) {
+                        chip.setChecked(false);
+                    }
+                }
+            }
             performSearch(searchText.getText().toString().trim());
         });
 
         resetFiltersButton.setOnClickListener(v -> resetFilters());
+
+        // Check the user's role and show/hide the "My Sites" chip
+        currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null) {
+            checkUserRole(currentUser.getUid());
+        }
+
         // Load all donation sites initially
         loadAllDonationSites();
+
         return view;
+    }
+
+    private void checkUserRole(String userId) {
+        db.collection("users").document(userId).get().addOnCompleteListener(task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                DocumentSnapshot userSnapshot = task.getResult();
+                User user = userSnapshot.toObject(User.class);
+                if (user != null && "Site Manager".equals(user.getUserType())) {
+                    isSiteManager = true;
+                    chipMySites.setVisibility(View.VISIBLE);
+                } else {
+                    chipMySites.setVisibility(View.GONE);
+                }
+            } else {
+                Log.e(TAG, "Error fetching user role", task.getException());
+            }
+        });
     }
 
     private void showDatePickerDialog(boolean isStartDate) {
@@ -136,11 +186,11 @@ public class SearchFragment extends Fragment {
             }
             performSearch(searchText.getText().toString().trim());
         };
+
         Calendar calendar = isStartDate ? startCalendar : endCalendar;
         DatePickerDialog datePickerDialog = new DatePickerDialog(
                 getContext(), dateSetListener, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH),
                 calendar.get(Calendar.DAY_OF_MONTH)
-
         );
         datePickerDialog.show();
     }
@@ -154,6 +204,7 @@ public class SearchFragment extends Fragment {
     private void loadAllDonationSites() {
         searchProgressBar.setVisibility(View.VISIBLE);
         db.collection("donationSites")
+                .whereEqualTo("status", "Active") // Add a filter for active sites
                 .get()
                 .addOnCompleteListener(task -> {
                     searchProgressBar.setVisibility(View.GONE);
@@ -168,58 +219,51 @@ public class SearchFragment extends Fragment {
                     } else {
                         Log.w(TAG, "Error getting documents.", task.getException());
                         Toast.makeText(getContext(), "Failed to load donation sites", Toast.LENGTH_SHORT).show();
-
                     }
                 });
     }
 
     private void performSearch(String query) {
         searchProgressBar.setVisibility(View.VISIBLE);
-        MapsFragment mapsFragment = (MapsFragment)
-                requireActivity().getSupportFragmentManager().findFragmentByTag("MapsFragment");
+        MapsFragment mapsFragment = (MapsFragment) requireActivity().getSupportFragmentManager().findFragmentByTag("MapsFragment");
         Location userLocation = mapsFragment != null ? mapsFragment.getLastKnownLocation() : null;
         List<String> selectedBloodTypes = getSelectedBloodTypes();
         boolean isNearMeSelected = filterChipGroup.getCheckedChipIds().contains(R.id.chipNearMe);
 
-        Log.d(TAG, "Selected blood types: " + selectedBloodTypes);
-        Log.d(TAG, "Is Near Me selected: " + isNearMeSelected);
-        Log.d(TAG, "User location: " + userLocation);
-        Log.d(TAG, "Start Date: " + startDateEditText.getText().toString());
-        Log.d(TAG, "End Date: " + endDateEditText.getText().toString());
-
         com.google.firebase.firestore.Query firestoreQuery = db.collection("donationSites");
 
-        // 1. Apply search text filter
+        // Apply default filter for "Active" status
+        firestoreQuery = firestoreQuery.whereEqualTo("status", "Active");
+
+        // Apply search text filter
         if (!query.isEmpty()) {
-            Log.d(TAG, "Applying search text filter");
             firestoreQuery = firestoreQuery.whereGreaterThanOrEqualTo("searchableName", query.toLowerCase())
                     .whereLessThanOrEqualTo("searchableName", query.toLowerCase() + "\uf8ff");
         }
 
-        // 2. Fetch sites containing any of the selected blood types
+        // Apply blood type filter
         if (!selectedBloodTypes.isEmpty()) {
-            Log.d(TAG, "Applying blood type filter: " + selectedBloodTypes);
             firestoreQuery = firestoreQuery.whereArrayContainsAny("requiredBloodTypes", selectedBloodTypes);
         }
 
-        // 3. Apply other filters (Near Me, date range) as before...
+        // Apply "Near Me" filter
         if (isNearMeSelected && userLocation != null) {
-            Log.d(TAG, "Applying 'Near Me' filter");
             GeoPoint geoPoint = new GeoPoint(userLocation.getLatitude(), userLocation.getLongitude());
-            double radius = 10; // Adjusted radius to 10 km
+            double radius = 10; // 10 km radius
             double lat = geoPoint.getLatitude();
             double lon = geoPoint.getLongitude();
             double latOffset = radius / 111.12; // Approximate km to degrees latitude
             double lonOffset = radius / (111.12 * Math.cos(Math.toRadians(lat)));
             GeoPoint southWest = new GeoPoint(lat - latOffset, lon - lonOffset);
             GeoPoint northEast = new GeoPoint(lat + latOffset, lon + lonOffset);
+
             firestoreQuery = firestoreQuery
                     .whereGreaterThanOrEqualTo("location", southWest)
                     .whereLessThanOrEqualTo("location", northEast);
         }
 
+        // Apply date range filter
         if (!startDateEditText.getText().toString().isEmpty() && !endDateEditText.getText().toString().isEmpty()) {
-            Log.d(TAG, "Applying date range filter");
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
             try {
                 Date startDate = sdf.parse(startDateEditText.getText().toString());
@@ -232,7 +276,10 @@ public class SearchFragment extends Fragment {
             }
         }
 
-        Log.d(TAG, "Firestore query: " + firestoreQuery.toString());
+        // Apply "My Sites" filter for site managers
+        if (isSiteManager && chipMySites.isChecked() && currentUser != null) {
+            firestoreQuery = firestoreQuery.whereEqualTo("managerId", currentUser.getUid());
+        }
 
         // Execute the query
         firestoreQuery.get().addOnCompleteListener(task -> {
@@ -242,27 +289,21 @@ public class SearchFragment extends Fragment {
                 for (QueryDocumentSnapshot document : task.getResult()) {
                     DonationSite site = document.toObject(DonationSite.class);
                     site.setSiteId(document.getId());
-
-                    // Post-process: Ensure site contains all selected blood types
-                    if (site.getRequiredBloodTypes().containsAll(selectedBloodTypes)) {
-                        siteList.add(site);
-                    }
+                    siteList.add(site);
                 }
                 adapter.notifyDataSetChanged();
             } else {
                 Log.w(TAG, "Error getting documents.", task.getException());
-                Toast.makeText(getContext(), "Search failed: " + task.getException().getMessage(),
-                        Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Search failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
-
 
     private List<String> getSelectedBloodTypes() {
         List<String> selectedTypes = new ArrayList<>();
         for (int id : filterChipGroup.getCheckedChipIds()) {
             Chip chip = filterChipGroup.findViewById(id);
-            if (!chip.getText().toString().equals("Near Me")) {
+            if (!chip.getText().toString().equals("Near Me")&&!chip.getText().toString().equals("My Sites")) {
                 selectedTypes.add(chip.getText().toString());
             }
         }
@@ -274,7 +315,6 @@ public class SearchFragment extends Fragment {
         // Clear date fields
         startDateEditText.setText("");
         endDateEditText.setText("");
-
         // Reset start and end Calendars
         startCalendar = Calendar.getInstance();
         endCalendar = Calendar.getInstance();
@@ -284,4 +324,3 @@ public class SearchFragment extends Fragment {
         loadAllDonationSites();
     }
 }
-
