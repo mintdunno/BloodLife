@@ -1,9 +1,11 @@
 package com.minh.bloodlife.fragments;
 
 import android.app.DatePickerDialog;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -16,10 +18,15 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
@@ -74,6 +81,7 @@ public class RegistrationFormFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_registration_form, container, false);
+        setHasOptionsMenu(true);
 
         numDonorsDropdown = view.findViewById(R.id.numDonorsDropdown);
         registrantsContainer = view.findViewById(R.id.registrantsContainer);
@@ -94,6 +102,39 @@ public class RegistrationFormFragment extends Fragment {
         registerButton.setOnClickListener(v -> registerDonors());
 
         return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        AppCompatActivity activity = (AppCompatActivity) getActivity();
+        if (activity != null) {
+            ActionBar actionBar = activity.getSupportActionBar();
+            if (actionBar != null) {
+                actionBar.setDisplayHomeAsUpEnabled(true);
+            }
+        }
+    }
+    @Override
+    public void onPause() {
+        super.onPause();
+        AppCompatActivity activity = (AppCompatActivity) getActivity();
+        if (activity != null) {
+            ActionBar actionBar = activity.getSupportActionBar();
+            if (actionBar != null) {
+                actionBar.setDisplayHomeAsUpEnabled(false);
+            }
+        }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            // Navigate back to the previous fragment (SiteDetailsFragment)
+            getParentFragmentManager().popBackStack();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private void showDatePicker(View view) {
@@ -172,7 +213,6 @@ public class RegistrationFormFragment extends Fragment {
                 return "";
         }
     }
-
     private void updateRegistrantFields(int numDonors) {
         registrantsContainer.removeAllViews();
         for (int i = 0; i < numDonors; i++) {
@@ -181,19 +221,40 @@ public class RegistrationFormFragment extends Fragment {
             TextInputLayout lastNameLayout = registrantView.findViewById(R.id.lastNameLayout);
             TextInputLayout phoneLayout = registrantView.findViewById(R.id.phoneLayout);
             TextInputLayout emailLayout = registrantView.findViewById(R.id.emailLayout);
-            TextInputLayout bloodTypeLayout = registrantView.findViewById(R.id.bloodTypeLayout);
+            ChipGroup bloodTypeChipGroup = registrantView.findViewById(R.id.bloodTypeChipGroup);
 
             // Set hints for each field
             firstNameLayout.setHint("First Name " + (i + 1));
             lastNameLayout.setHint("Last Name " + (i + 1));
             phoneLayout.setHint("Phone (Required)" + (i + 1));
             emailLayout.setHint("Email (Optional)" + (i + 1));
-            bloodTypeLayout.setHint("Blood Type (Optional)" + (i + 1));
+
+            // Set up blood type ChipGroup
+            setupBloodTypeChips(bloodTypeChipGroup);
 
             registrantsContainer.addView(registrantView);
+
+            // Add a divider between each registrant except the last one
+            if (i < numDonors - 1) {
+                View divider = new View(getContext());
+                divider.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1));
+                divider.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
+                registrantsContainer.addView(divider);
+            }
         }
     }
 
+    private void setupBloodTypeChips(ChipGroup chipGroup) {
+        String[] bloodTypes = new String[]{"A","B","AB","O"};
+        for (String bloodType : bloodTypes) {
+            Chip chip = new Chip(getContext());
+            chip.setText(bloodType);
+            chip.setCheckable(true);
+            chip.setChipBackgroundColor(ColorStateList.valueOf(ContextCompat.getColor(getContext(), R.color.chip_background_color)));
+            chip.setTextColor(ColorStateList.valueOf(ContextCompat.getColor(getContext(), R.color.chip_text_color)));
+            chipGroup.addView(chip);
+        }
+    }
     private void registerDonors() {
         String userId = mAuth.getCurrentUser().getUid();
         List<Map<String, Object>> registrants = new ArrayList<>();
@@ -204,13 +265,13 @@ public class RegistrationFormFragment extends Fragment {
             TextInputEditText lastNameInput = registrantView.findViewById(R.id.lastNameInput);
             TextInputEditText phoneInput = registrantView.findViewById(R.id.phoneInput);
             TextInputEditText emailInput = registrantView.findViewById(R.id.emailInput);
-            AutoCompleteTextView bloodTypeInput = registrantView.findViewById(R.id.bloodTypeInput);
+            ChipGroup bloodTypeChipGroup = registrantView.findViewById(R.id.bloodTypeChipGroup);
 
             String firstName = firstNameInput.getText().toString();
             String lastName = lastNameInput.getText().toString();
             String phone = phoneInput.getText().toString();
             String email = emailInput.getText().toString();
-            String bloodType = bloodTypeInput.getText().toString();
+            String bloodType = getSelectedBloodType(bloodTypeChipGroup);
 
             if (firstName.isEmpty() || lastName.isEmpty() || phone.isEmpty()) {
                 Toast.makeText(getContext(), "Please fill in all required fields.", Toast.LENGTH_SHORT).show();
@@ -261,5 +322,14 @@ public class RegistrationFormFragment extends Fragment {
             Log.e("RegistrationFormFragment", "Error parsing date", e);
             return new Date(); // Return current date as default
         }
+    }
+
+    private String getSelectedBloodType(ChipGroup chipGroup) {
+        int checkedChipId = chipGroup.getCheckedChipId();
+        if (checkedChipId != View.NO_ID) {
+            Chip checkedChip = chipGroup.findViewById(checkedChipId);
+            return checkedChip.getText().toString();
+        }
+        return ""; // Return empty if nothing is selected
     }
 }

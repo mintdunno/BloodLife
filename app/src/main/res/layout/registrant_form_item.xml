@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/registrantItem"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -67,19 +68,15 @@
             android:inputType="textEmailAddress" />
     </com.google.android.material.textfield.TextInputLayout>
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/bloodTypeLayout"
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/bloodTypeChipGroup"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:hint="@string/blood_type_optional"
-        app:boxStrokeColor="@color/your_primary_color"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+        app:singleSelection="true">
 
-        <AutoCompleteTextView
-            android:id="@+id/bloodTypeInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="none"/>
-    </com.google.android.material.textfield.TextInputLayout>
+        <!-- Blood type Chips will be added here programmatically -->
+
+    </com.google.android.material.chip.ChipGroup>
+
 </LinearLayout>
