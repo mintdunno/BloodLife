@@ -41,7 +41,7 @@
                         android:layout_width="32dp"
                         android:layout_height="32dp"
                         android:layout_marginEnd="8dp"
-                        android:contentDescription="@string/site_name_icon"
+                        android:contentDescription="@string/site_name"
                         android:src="@drawable/ic_site_name"
                         app:tint="@color/primary_red" />
 
@@ -50,7 +50,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Site Name"
+                        android:text="@string/site_name"
                         android:textAppearance="?attr/textAppearanceHeadline6"
                         android:textColor="@color/primary_red" />
                 </LinearLayout>
@@ -83,7 +83,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Site Address"
+                        android:text="@string/site_address"
                         android:textAppearance="?attr/textAppearanceBody1"
                         android:textColor="@color/black" />
                 </LinearLayout>
@@ -118,7 +118,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Start Date - End Date"
+                        android:text="@string/start_date"
                         android:textAppearance="?attr/textAppearanceBody1"
                         android:textColor="@color/black" />
                 </LinearLayout>
@@ -153,7 +153,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Donation Hours"
+                        android:text="@string/donation_start_time"
                         android:textAppearance="?attr/textAppearanceBody1"
                         android:textColor="@color/black" />
                 </LinearLayout>
@@ -188,7 +188,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Operating Days"
+                        android:text="@string/donation_days"
                         android:textAppearance="?attr/textAppearanceBody1"
                         android:textColor="@color/black" />
                 </LinearLayout>
@@ -223,35 +223,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Required Blood Types"
-                        android:textAppearance="?attr/textAppearanceBody1"
-                        android:textColor="@color/black" />
-                </LinearLayout>
-
-                <!-- Contact Information -->
-                <LinearLayout
-                    android:id="@+id/contactLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingBottom="8dp">
-
-                    <ImageView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:layout_marginEnd="8dp"
-                        android:contentDescription="@string/contact_icon"
-                        android:src="@drawable/ic_contact"
-                        app:tint="@color/primary_red" />
-
-                    <TextView
-                        android:id="@+id/contactTextView"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Contact Information"
+                        android:text="@string/required_blood_types"
                         android:textAppearance="?attr/textAppearanceBody1"
                         android:textColor="@color/black" />
                 </LinearLayout>
@@ -263,7 +235,77 @@
                     android:layout_marginBottom="8dp"
                     android:background="@color/light_gray" />
 
-                <!-- Site Description -->
+                <!-- Contact Phone -->
+                <LinearLayout
+                    android:id="@+id/contactPhoneLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_marginEnd="8dp"
+                        android:contentDescription="@string/contact_phone_icon"
+                        android:src="@drawable/ic_phone"
+                        app:tint="@color/primary_red" />
+
+                    <TextView
+                        android:id="@+id/contactPhoneTextView"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/contact_phone"
+                        android:textAppearance="?attr/textAppearanceBody1"
+                        android:textColor="@color/black" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:background="@color/light_gray" />
+
+                <!-- Contact Email -->
+                <LinearLayout
+                    android:id="@+id/contactEmailLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_marginEnd="8dp"
+                        android:contentDescription="@string/contact_email_icon"
+                        android:src="@drawable/ic_email"
+                        app:tint="@color/primary_red" />
+
+                    <TextView
+                        android:id="@+id/contactEmailTextView"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/contact_email"
+                        android:textAppearance="?attr/textAppearanceBody1"
+                        android:textColor="@color/black" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:background="@color/light_gray" />
+
+                <!-- Description -->
                 <LinearLayout
                     android:id="@+id/descriptionLayout"
                     android:layout_width="match_parent"
@@ -286,7 +328,42 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Site Description"
+                        android:text="@string/description"
+                        android:textAppearance="?attr/textAppearanceBody1"
+                        android:textColor="@color/black" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:background="@color/light_gray" />
+
+                <!-- Status -->
+                <LinearLayout
+                    android:id="@+id/statusLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_marginEnd="8dp"
+                        android:contentDescription="@string/status_icon"
+                        android:src="@drawable/ic_status"
+                        app:tint="@color/primary_red" />
+
+                    <TextView
+                        android:id="@+id/statusTextView"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/status_icon"
                         android:textAppearance="?attr/textAppearanceBody1"
                         android:textColor="@color/black" />
                 </LinearLayout>

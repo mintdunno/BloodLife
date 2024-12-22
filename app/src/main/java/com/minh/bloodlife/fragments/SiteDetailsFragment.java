@@ -1,5 +1,6 @@
 package com.minh.bloodlife.fragments;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.net.Uri;
@@ -38,8 +39,6 @@ import com.minh.bloodlife.R;
 import com.minh.bloodlife.model.DonationSite;
 import com.minh.bloodlife.model.Registration;
 import com.minh.bloodlife.model.User;
-import com.minh.bloodlife.fragments.RegistrationFormFragment;
-
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -54,7 +53,7 @@ public class SiteDetailsFragment extends Fragment {
     private static final String TAG = "SiteDetailsFragment";
     private static final String ARG_SITE_ID = "siteId";
     private String siteId;
-    private TextView siteNameTextView, siteAddressTextView, siteHoursTextView, requiredBloodTypesTextView, siteDaysTextView, siteStartEndDateTextView;
+    private TextView siteNameTextView, siteAddressTextView, siteHoursTextView, requiredBloodTypesTextView, siteDaysTextView, siteStartEndDateTextView, contactPhoneTextView, contactEmailTextView, descriptionTextView, statusTextView;
     private LinearLayout buttonLayout;
     private View view;
     private FirebaseFirestore db;
@@ -93,6 +92,10 @@ public class SiteDetailsFragment extends Fragment {
         requiredBloodTypesTextView = view.findViewById(R.id.requiredBloodTypesTextView);
         siteDaysTextView = view.findViewById(R.id.siteDaysTextView);
         buttonLayout = view.findViewById(R.id.buttonLayout);
+        contactPhoneTextView = view.findViewById(R.id.contactPhoneTextView);
+        contactEmailTextView = view.findViewById(R.id.contactEmailTextView);
+        descriptionTextView = view.findViewById(R.id.descriptionTextView);
+        statusTextView = view.findViewById(R.id.statusTextView);
 
         checkUserRoleAndAddButtons();
         fetchSiteDetails();
@@ -122,17 +125,10 @@ public class SiteDetailsFragment extends Fragment {
     }
 
     private void addDonorButtons() {
-        Button registerForYouButton = createStyledButton("Register for You");
-        registerForYouButton.setOnClickListener(v -> {
-            handleButtonAnimation(registerForYouButton);
+        Button registerToDonateButton = createStyledButton("Register to Donate");
+        registerToDonateButton.setOnClickListener(v -> {
+            handleButtonAnimation(registerToDonateButton);
             // Directly call handleRegisterToDonate with numDonors set to 1
-            handleRegisterToDonate(1);
-        });
-
-        Button registerForOthersButton = createStyledButton("Register for Others");
-        registerForOthersButton.setOnClickListener(v -> {
-            handleButtonAnimation(registerForOthersButton);
-            // Open RegistrationFormFragment for registering others
             openRegistrationFormFragment();
         });
 
@@ -142,8 +138,7 @@ public class SiteDetailsFragment extends Fragment {
             getDirectionsToSite();
         });
 
-        buttonLayout.addView(registerForYouButton);
-        buttonLayout.addView(registerForOthersButton);
+        buttonLayout.addView(registerToDonateButton);
         buttonLayout.addView(getDirectionsButton);
 
         checkIfUserIsRegistered();
@@ -257,7 +252,9 @@ public class SiteDetailsFragment extends Fragment {
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private void fetchSiteDetails() {
+        Log.d(TAG, "fetchSiteDetails called for siteId: " + siteId);
         if (view == null) {
             Log.e(TAG, "View is null in fetchSiteDetails");
             return;
@@ -276,7 +273,11 @@ public class SiteDetailsFragment extends Fragment {
                             String timeRange = String.format("From %s to %s", site.getDonationStartTime(), site.getDonationEndTime());
                             siteHoursTextView.setText(timeRange);
                             siteDaysTextView.setText(formatOperatingDays(site.getDonationDays()));
-                            requiredBloodTypesTextView.setText(formatBloodTypes(site.getRequiredBloodTypes()));
+                            requiredBloodTypesTextView.setText("Blood Types: " + formatBloodTypes(site.getRequiredBloodTypes()));
+                            contactPhoneTextView.setText("Phone: " + site.getContactPhone());
+                            contactEmailTextView.setText("Email: " + site.getContactEmail());
+                            descriptionTextView.setText("Description: " + site.getDescription());
+                            statusTextView.setText("Status: " + site.getStatus());
                         }
                     } else {
                         Log.e(TAG, "Site not found");
@@ -352,7 +353,7 @@ public class SiteDetailsFragment extends Fragment {
     private void openRegistrationFormFragment() {
         RegistrationFormFragment registrationFormFragment = RegistrationFormFragment.newInstance(siteId);
         getActivity().getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragmentContainer, registrationFormFragment) // Use your actual container ID
+                .replace(R.id.fragmentContainer, registrationFormFragment)
                 .addToBackStack(null)
                 .commit();
     }
