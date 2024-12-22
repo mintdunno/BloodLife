@@ -86,4 +86,14 @@
     <string name="contact_icon">Contact Icon</string>
     <string name="description_icon">Description Icon</string>
     <string name="contact_information">Contact Information</string>
+    <string name="contact_phone">Contact Phone (Required)</string>
+    <string name="contact_email">Contact Email (Required)</string>
+    <string name="description">Description (Optional)</string>
+    <string name="required_blood_types">Required Blood Types</string>
+    <string name="status_label">Status Label</string>
+    <string-array name="site_status_options">
+        <item>Active</item>
+        <item>Inactive</item>
+        <item>Completed</item>
+    </string-array>
 </resources>

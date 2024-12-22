@@ -3,6 +3,7 @@ package com.minh.bloodlife.fragments;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
@@ -12,18 +13,21 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.gms.common.api.Status;
@@ -65,7 +69,7 @@ public class CreateSiteFragment extends Fragment {
     private static final String PLACES_API_KEY = "AIzaSyAmYG0ewlmb4zaJAkC6pBsFjqi0NBQu-Po";
 
     private TextInputEditText siteNameEditText, donationStartTimeEditText, donationEndTimeEditText,
-            startDateEditText, endDateEditText;
+            startDateEditText, endDateEditText, contactPhoneEditText, contactEmailEditText, descriptionEditText;
     private EditText siteAddressEditText;
     private ChipGroup bloodTypesChipGroup, donationDaysChipGroup;
     private Button createSiteButton;
@@ -74,10 +78,10 @@ public class CreateSiteFragment extends Fragment {
     private Calendar startCalendar, endCalendar;
     private LatLng selectedLatLng;
     private Geocoder geocoder;
-    private TextView donationDaysTextView; // TextView to display selected days
+    private TextView donationDaysTextView;
     private View view;
-
     private ProgressBar createSiteProgressBar;
+    private Spinner statusSpinner;
 
     @Nullable
     @Override
@@ -86,17 +90,7 @@ public class CreateSiteFragment extends Fragment {
         view = inflater.inflate(R.layout.fragment_create_site, container, false);
 
         // Initialize UI components
-        siteNameEditText = view.findViewById(R.id.siteNameEditText);
-        siteAddressEditText = view.findViewById(R.id.siteAddressEditText);
-        donationStartTimeEditText = view.findViewById(R.id.donationStartTimeEditText);
-        donationEndTimeEditText = view.findViewById(R.id.donationEndTimeEditText);
-        bloodTypesChipGroup = view.findViewById(R.id.bloodTypesChipGroup);
-        createSiteButton = view.findViewById(R.id.createSiteButton);
-        startDateEditText = view.findViewById(R.id.startDateEditText);
-        endDateEditText = view.findViewById(R.id.endDateEditText);
-        donationDaysChipGroup = view.findViewById(R.id.donationDaysChipGroup);
-        donationDaysTextView = view.findViewById(R.id.donationDaysTextView); // TextView for selected days
-        createSiteProgressBar = view.findViewById(R.id.createSiteProgressBar);
+        initializeUIComponents();
 
         // Initialize Firebase
         db = FirebaseFirestore.getInstance();
@@ -107,27 +101,51 @@ public class CreateSiteFragment extends Fragment {
         endCalendar = Calendar.getInstance();
 
         // Initialize Places API
-        if (!Places.isInitialized()) {
-            Places.initialize(getActivity().getApplicationContext(), PLACES_API_KEY);
-        }
-        geocoder = new Geocoder(getContext(), Locale.getDefault());
+        initializePlacesAPI();
 
         // Set up AutocompleteSupportFragment for place selection
         setupPlaceAutocomplete();
 
         // Set up date and time pickers
-        startDateEditText.setOnClickListener(v -> showDatePickerDialog(true));
-        endDateEditText.setOnClickListener(v -> showDatePickerDialog(false));
-        donationStartTimeEditText.setOnClickListener(v -> showTimePickerDialog(true));
-        donationEndTimeEditText.setOnClickListener(v -> showTimePickerDialog(false));
+        setupDateTimePickers();
 
-        // Set up ChipGroup listener for donation days
-        setupDonationDaysChipGroup();
+        // Set up ChipGroup listeners
+        setupChipGroupListeners();
 
         // Set up click listener for create site button
         createSiteButton.setOnClickListener(v -> createSite());
 
         return view;
+    }
+
+    private void initializeUIComponents() {
+        siteNameEditText = view.findViewById(R.id.siteNameEditText);
+        siteAddressEditText = view.findViewById(R.id.siteAddressEditText);
+        donationStartTimeEditText = view.findViewById(R.id.donationStartTimeEditText);
+        donationEndTimeEditText = view.findViewById(R.id.donationEndTimeEditText);
+        bloodTypesChipGroup = view.findViewById(R.id.bloodTypesChipGroup);
+        createSiteButton = view.findViewById(R.id.createSiteButton);
+        startDateEditText = view.findViewById(R.id.startDateEditText);
+        endDateEditText = view.findViewById(R.id.endDateEditText);
+        donationDaysChipGroup = view.findViewById(R.id.donationDaysChipGroup);
+        donationDaysTextView = view.findViewById(R.id.donationDaysTextView);
+        createSiteProgressBar = view.findViewById(R.id.createSiteProgressBar);
+        contactPhoneEditText = view.findViewById(R.id.contactPhoneEditText);
+        contactEmailEditText = view.findViewById(R.id.contactEmailEditText);
+        descriptionEditText = view.findViewById(R.id.descriptionEditText);
+        statusSpinner = view.findViewById(R.id.statusSpinner);
+
+        ArrayAdapter<CharSequence> statusAdapter = ArrayAdapter.createFromResource(getContext(),
+                R.array.site_status_options, android.R.layout.simple_spinner_item);
+        statusAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        statusSpinner.setAdapter(statusAdapter);
+    }
+
+    private void initializePlacesAPI() {
+        if (!Places.isInitialized()) {
+            Places.initialize(getActivity().getApplicationContext(), PLACES_API_KEY);
+        }
+        geocoder = new Geocoder(getContext(), Locale.getDefault());
     }
 
     private void setupPlaceAutocomplete() {
@@ -150,6 +168,18 @@ public class CreateSiteFragment extends Fragment {
                 Toast.makeText(getContext(), "Error: " + status.getStatusMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void setupDateTimePickers() {
+        startDateEditText.setOnClickListener(v -> showDatePickerDialog(true));
+        endDateEditText.setOnClickListener(v -> showDatePickerDialog(false));
+        donationStartTimeEditText.setOnClickListener(v -> showTimePickerDialog(true));
+        donationEndTimeEditText.setOnClickListener(v -> showTimePickerDialog(false));
+    }
+
+    private void setupChipGroupListeners() {
+        setupDonationDaysChipGroup();
+        setupBloodTypesChipGroup();
     }
 
     private void showDatePickerDialog(boolean isStartDate) {
@@ -197,20 +227,37 @@ public class CreateSiteFragment extends Fragment {
     }
 
     private void setupDonationDaysChipGroup() {
+        String[] daysOfWeek = new String[]{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+        for (String day : daysOfWeek) {
+            Chip chip = new Chip(getContext());
+            chip.setText(day);
+            chip.setCheckable(true);
+            donationDaysChipGroup.addView(chip);
+        }
+
         donationDaysChipGroup.setOnCheckedStateChangeListener((group, checkedIds) -> {
             List<String> selectedDays = new ArrayList<>();
             for (int id : checkedIds) {
                 Chip chip = group.findViewById(id);
                 selectedDays.add(chip.getText().toString());
             }
-
-            // Update the TextView with the selected days
             String formattedDays = selectedDays.stream()
-                    .map(day -> day.substring(0, Math.min(day.length(), 3))) // Get first 3 letters
-                    .collect(Collectors.joining(", ")); // Join with comma and space
-
+                    .map(day -> day.substring(0, Math.min(day.length(), 3)))
+                    .collect(Collectors.joining(", "));
             donationDaysTextView.setText(getString(R.string.selected_days_text, formattedDays));
         });
+    }
+
+    private void setupBloodTypesChipGroup() {
+        String[] bloodTypes = new String[]{"A", "B", "AB", "O"};
+        for (String bloodType : bloodTypes) {
+            Chip chip = new Chip(getContext());
+            chip.setText(bloodType);
+            chip.setCheckable(true);
+            chip.setChipBackgroundColor(ColorStateList.valueOf(ContextCompat.getColor(getContext(), R.color.chip_background_color)));
+            chip.setTextColor(ColorStateList.valueOf(ContextCompat.getColor(getContext(), R.color.chip_text_color)));
+            bloodTypesChipGroup.addView(chip);
+        }
     }
 
     private List<String> getSelectedDays() {
@@ -224,7 +271,6 @@ public class CreateSiteFragment extends Fragment {
 
     private void createSite() {
         createSiteProgressBar.setVisibility(View.VISIBLE);
-        // Collect data from input fields
         String siteName = siteNameEditText.getText().toString().trim();
         String siteAddress = siteAddressEditText.getText().toString().trim();
         String donationStartTime = donationStartTimeEditText.getText().toString().trim();
@@ -233,9 +279,13 @@ public class CreateSiteFragment extends Fragment {
         String startDate = startDateEditText.getText().toString().trim();
         String endDate = endDateEditText.getText().toString().trim();
         List<String> donationDays = getSelectedDays();
+        String contactPhone = contactPhoneEditText.getText().toString().trim();
+        String contactEmail = contactEmailEditText.getText().toString().trim();
+        String description = descriptionEditText.getText().toString().trim();
+        String status = statusSpinner.getSelectedItem().toString();
 
         // Validation
-        if (!validateInputFields(siteName, siteAddress, donationStartTime, donationEndTime, startDate, endDate)) {
+        if (!validateInputFields(siteName, siteAddress, donationStartTime, donationEndTime, startDate, endDate, contactPhone, contactEmail, description)) {
             createSiteProgressBar.setVisibility(View.GONE);
             return;
         }
@@ -257,23 +307,11 @@ public class CreateSiteFragment extends Fragment {
         String managerId = user.getUid();
 
         // Convert the selected LatLng to a GeoPoint
-        GeoPoint location = (selectedLatLng != null) ?
-                new GeoPoint(selectedLatLng.latitude, selectedLatLng.longitude) :
-                null;
+        GeoPoint location = (selectedLatLng != null) ? new GeoPoint(selectedLatLng.latitude, selectedLatLng.longitude) : null;
 
         // Create a new donation site object
-        Map<String, Object> site = new HashMap<>();
-        site.put("siteName", siteName);
-        site.put("address", siteAddress);
-        site.put("donationStartTime", donationStartTime);
-        site.put("donationEndTime", donationEndTime);
-        site.put("requiredBloodTypes", requiredBloodTypes);
-        site.put("managerId", managerId);
-        site.put("searchableName", siteName.toLowerCase());
-        site.put("location", location);
-        site.put("startDate", startDate);
-        site.put("endDate", endDate);
-        site.put("donationDays", donationDays);
+        DonationSite site = new DonationSite(siteName, siteAddress, location, donationStartTime, donationEndTime, donationDays,
+                requiredBloodTypes, managerId, startDate, endDate, contactPhone, contactEmail, description, status);
 
         // Add the new site to Firestore
         db.collection("donationSites")
@@ -285,17 +323,17 @@ public class CreateSiteFragment extends Fragment {
                     showTickConfirmationPopup(siteName);
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(), "Error creating donation site: " + e.getMessage(),
-                            Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Error creating donation site: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     createSiteProgressBar.setVisibility(View.GONE);
                 });
     }
 
-    private boolean validateInputFields(String siteName, String siteAddress, String donationStartTime,
-                                        String donationEndTime, String startDate, String endDate) {
+    private boolean validateInputFields(String siteName, String siteAddress, String donationStartTime, String donationEndTime,
+                                        String startDate, String endDate, String contactPhone, String contactEmail, String description) {
         if (siteName.isEmpty() || siteAddress.isEmpty() || donationStartTime.isEmpty() ||
-                donationEndTime.isEmpty() || startDate.isEmpty() || endDate.isEmpty()) {
-            Toast.makeText(getContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
+                donationEndTime.isEmpty() || startDate.isEmpty() || endDate.isEmpty() ||
+                contactPhone.isEmpty() || contactEmail.isEmpty() || description.isEmpty()) {
+            Toast.makeText(getContext(), "Please fill all required fields", Toast.LENGTH_SHORT).show();
             return false;
         }
 
@@ -321,31 +359,17 @@ public class CreateSiteFragment extends Fragment {
     }
 
     private boolean isWithinSelectedDays(List<String> selectedDays, Calendar start, Calendar end) {
-        SimpleDateFormat dayFormat = new SimpleDateFormat("EEE", Locale.getDefault());
+        SimpleDateFormat dayFormat = new SimpleDateFormat("EEEE", Locale.getDefault());
 
         // Check if start date is on a selected day
         String startDayOfWeek = dayFormat.format(start.getTime());
-        boolean startFound = false;
-        for (String selectedDay : selectedDays) {
-            if (selectedDay.toLowerCase().startsWith(startDayOfWeek.toLowerCase())) {
-                startFound = true;
-                break;
-            }
-        }
-        if (!startFound) {
+        if (!selectedDays.contains(startDayOfWeek)) {
             return false;
         }
 
         // Check if end date is on a selected day
         String endDayOfWeek = dayFormat.format(end.getTime());
-        boolean endFound = false;
-        for (String selectedDay : selectedDays) {
-            if (selectedDay.toLowerCase().startsWith(endDayOfWeek.toLowerCase())) {
-                endFound = true;
-                break;
-            }
-        }
-        if (!endFound) {
+        if (!selectedDays.contains(endDayOfWeek)) {
             return false;
         }
 
@@ -370,6 +394,9 @@ public class CreateSiteFragment extends Fragment {
         donationEndTimeEditText.setText("");
         startDateEditText.setText("");
         endDateEditText.setText("");
+        contactPhoneEditText.setText("");
+        contactEmailEditText.setText("");
+        descriptionEditText.setText("");
 
         // Clear selected blood types
         bloodTypesChipGroup.clearCheck();
@@ -384,9 +411,6 @@ public class CreateSiteFragment extends Fragment {
 
         // Reset selected location (if applicable)
         selectedLatLng = null;
-
-        // You might need to reset the AutocompleteSupportFragment as well,
-        // depending on how it's implemented
     }
 
     private void showTickConfirmationPopup(String siteName) {
@@ -399,7 +423,7 @@ public class CreateSiteFragment extends Fragment {
         layout.setPadding(50, 50, 50, 50);
 
         ImageView tickImage = new ImageView(getContext());
-        tickImage.setImageResource(R.drawable.ic_check_circle); // Replace with your tick icon resource
+        tickImage.setImageResource(R.drawable.ic_check_circle);
         tickImage.setColorFilter(Color.GREEN);
         layout.addView(tickImage);
 

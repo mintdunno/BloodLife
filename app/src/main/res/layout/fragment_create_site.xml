@@ -11,9 +11,11 @@
         android:padding="16dp">
 
         <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Site Name">
+            android:hint="@string/site_name"
+            app:boxStrokeColor="@color/your_primary_color">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/siteNameEditText"
@@ -25,14 +27,15 @@
             android:id="@+id/autocomplete_fragment"
             android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="44dp"
+            android:layout_marginTop="16dp" />
 
         <EditText
             android:id="@+id/siteAddressEditText"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Site Address"
-            android:focusable="false"/>
+            android:layout_height="69dp"
+            android:focusable="false"
+            android:hint="@string/site_address" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -41,107 +44,146 @@
             android:weightSum="2">
 
             <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:hint="Start Time">
+                android:hint="@string/donation_start_time">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/donationStartTimeEditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:focusable="false" />
+                    android:focusable="false"
+                    android:inputType="time" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:hint="End Time">
+                android:hint="@string/donation_end_time">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/donationEndTimeEditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:focusable="false" />
+                    android:focusable="false"
+                    android:inputType="time" />
             </com.google.android.material.textfield.TextInputLayout>
 
         </LinearLayout>
 
         <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Start Date">
+            android:hint="@string/start_date">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/startDateEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:focusable="false" />
+                android:focusable="false"
+                android:inputType="date" />
         </com.google.android.material.textfield.TextInputLayout>
 
-
         <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="End Date">
+            android:hint="@string/end_date"
+            app:boxStrokeColor="@color/your_primary_color">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/endDateEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:focusable="false" />
+                android:focusable="false"
+                android:inputType="date" />
         </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- New Fields for Contact Phone, Email, and Description -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/contactPhoneLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="@string/contact_phone"
+            app:boxStrokeColor="@color/your_primary_color">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/contactPhoneEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="phone" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/contactEmailLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="@string/contact_email"
+            app:boxStrokeColor="@color/your_primary_color">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/contactEmailEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textEmailAddress" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/descriptionLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="@string/description"
+            app:boxStrokeColor="@color/your_primary_color">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/descriptionEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textMultiLine" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <Spinner
+            android:id="@+id/statusSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="49dp"
+            android:layout_marginTop="16dp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Required Blood Types:"
-            android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+            android:layout_marginTop="16dp"
+            android:text="@string/required_blood_types"
+            android:textAppearance="?attr/textAppearanceBody1" />
 
         <com.google.android.material.chip.ChipGroup
             android:id="@+id/bloodTypesChipGroup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp">
+            android:layout_marginTop="8dp"
+            app:singleSelection="false">
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_blood_type_a_plus"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="A" />
+            <!-- Blood type chips will be added programmatically -->
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_blood_type_b_plus"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="B" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_blood_type_ab_plus"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="AB" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_blood_type_o_minus"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="O" />
         </com.google.android.material.chip.ChipGroup>
 
         <TextView
-            android:id="@+id/donationDaysLabel"
+            android:id="@+id/donationDaysTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Select Donation Days:"
-            android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+            android:layout_marginTop="16dp"
+            android:text="@string/donation_days"
+            android:textAppearance="?attr/textAppearanceBody1" />
 
         <com.google.android.material.chip.ChipGroup
             android:id="@+id/donationDaysChipGroup"
@@ -150,70 +192,17 @@
             android:layout_marginTop="8dp"
             app:chipSpacing="8dp">
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipMonday"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Monday" />
+            <!-- Donation day chips will be added programmatically -->
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipTuesday"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Tuesday" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipWednesday"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Wednesday" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipThursday"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Thursday" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipFriday"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Friday" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipSaturday"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Saturday" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipSunday"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Sunday" />
         </com.google.android.material.chip.ChipGroup>
-
-        <TextView
-            android:id="@+id/donationDaysTextView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Selected Days: " />
-
 
         <Button
             android:id="@+id/createSiteButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Create Site" />
+            android:text="@string/create_site" />
+
         <ProgressBar
             android:id="@+id/createSiteProgressBar"
             android:layout_width="wrap_content"
