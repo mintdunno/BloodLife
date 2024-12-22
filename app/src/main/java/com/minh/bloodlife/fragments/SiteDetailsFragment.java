@@ -23,6 +23,8 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.appcompat.app.AlertDialog;
+
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -146,7 +148,7 @@ public class SiteDetailsFragment extends Fragment {
         Button registerAsVolunteerButton = createStyledButton("Register as Volunteer");
         registerAsVolunteerButton.setOnClickListener(v -> {
             handleButtonAnimation(registerAsVolunteerButton);
-            handleRegisterAsVolunteer();
+            checkIfAlreadyVolunteering(currentUser.getUid());
         });
 
         Button getDirectionsButton = createStyledButton("Get Directions");
@@ -160,6 +162,78 @@ public class SiteDetailsFragment extends Fragment {
 
         checkIfUserIsRegistered();
     }
+
+    private void checkIfAlreadyVolunteering(String userId) {
+        db.collection("registrations")
+                .whereEqualTo("userId", userId)
+                .whereEqualTo("isVolunteer", true)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        QuerySnapshot querySnapshot = task.getResult();
+                        if (querySnapshot != null && !querySnapshot.isEmpty()) {
+                            // User is already a volunteer at a site
+                            DocumentSnapshot document = querySnapshot.getDocuments().get(0);
+                            Registration existingRegistration = document.toObject(Registration.class);
+                            if (existingRegistration != null) {
+                                String existingSiteId = existingRegistration.getSiteId();
+                                if (!existingSiteId.equals(siteId)) {
+                                    // User is volunteering at a different site, ask for confirmation to switch
+                                    showVolunteerConfirmationDialog(userId, existingSiteId, document.getId());
+                                } else {
+                                    // User is already registered at this site, show a message
+                                    Toast.makeText(getContext(), "You are already registered as a volunteer for this site.", Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        } else {
+                            // User is not registered as a volunteer at any site, proceed with registration
+                            handleRegisterAsVolunteer();
+                        }
+                    } else {
+                        Log.e(TAG, "Error checking for existing volunteer registration", task.getException());
+                        Toast.makeText(getContext(), "Error checking registration status.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void showVolunteerConfirmationDialog(String userId, String existingSiteId, String existingRegistrationId) {
+        db.collection("donationSites").document(existingSiteId).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    String existingSiteName = "Unknown Site";
+                    if (documentSnapshot.exists()) {
+                        DonationSite existingSite = documentSnapshot.toObject(DonationSite.class);
+                        if (existingSite != null) {
+                            existingSiteName = existingSite.getSiteName();
+                        }
+                    }
+
+                    // Use the imported AlertDialog class here
+                    new AlertDialog.Builder(getContext())
+                            .setTitle("Change Volunteer Site")
+                            .setMessage("You are already registered as a volunteer at " + existingSiteName + ". Do you want to switch to volunteering at this site instead?")
+                            .setPositiveButton("Yes", (dialog, which) -> {
+                                updateExistingRegistration(existingRegistrationId);
+                                registerForEvent(userId, siteId, true, 0);
+                            })
+                            .setNegativeButton("No", (dialog, which) -> {
+                                dialog.dismiss();
+                            })
+                            .show();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error fetching existing site details", e);
+                    Toast.makeText(getContext(), "Error fetching existing site details.", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+
+    private void updateExistingRegistration(String registrationId) {
+        db.collection("registrations").document(registrationId)
+                .update("isVolunteer", false)
+                .addOnSuccessListener(aVoid -> Log.d(TAG, "Existing registration updated successfully."))
+                .addOnFailureListener(e -> Log.e(TAG, "Error updating existing registration", e));
+    }
+
 
     private Button createStyledButton(String text) {
         Button button = new Button(getContext());
@@ -214,13 +288,15 @@ public class SiteDetailsFragment extends Fragment {
     }
 
     private void disableRegistrationButtons() {
-        for (int i = 0; i < buttonLayout.getChildCount(); i++) {
-            View child = buttonLayout.getChildAt(i);
-            if (child instanceof Button) {
-                Button button = (Button) child;
-                if (button.getText().equals("Register to Donate") ||
-                        button.getText().equals("Register as Volunteer")) {
-                    button.setEnabled(false);
+        if (buttonLayout != null) {
+            for (int i = 0; i < buttonLayout.getChildCount(); i++) {
+                View child = buttonLayout.getChildAt(i);
+                if (child instanceof Button) {
+                    Button button = (Button) child;
+                    if (button.getText().equals("Register to Donate") ||
+                            button.getText().equals("Register as Volunteer")) {
+                        button.setEnabled(false);
+                    }
                 }
             }
         }
