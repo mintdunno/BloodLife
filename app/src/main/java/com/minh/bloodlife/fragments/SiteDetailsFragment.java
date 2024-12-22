@@ -1,6 +1,5 @@
 package com.minh.bloodlife.fragments;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.net.Uri;
@@ -128,7 +127,6 @@ public class SiteDetailsFragment extends Fragment {
         Button registerToDonateButton = createStyledButton("Register to Donate");
         registerToDonateButton.setOnClickListener(v -> {
             handleButtonAnimation(registerToDonateButton);
-            // Directly call handleRegisterToDonate with numDonors set to 1
             openRegistrationFormFragment();
         });
 
@@ -162,6 +160,7 @@ public class SiteDetailsFragment extends Fragment {
 
         checkIfUserIsRegistered();
     }
+
     private Button createStyledButton(String text) {
         Button button = new Button(getContext());
         button.setText(text);
@@ -219,8 +218,7 @@ public class SiteDetailsFragment extends Fragment {
             View child = buttonLayout.getChildAt(i);
             if (child instanceof Button) {
                 Button button = (Button) child;
-                if (button.getText().equals("Register for You") ||
-                        button.getText().equals("Register for Others") ||
+                if (button.getText().equals("Register to Donate") ||
                         button.getText().equals("Register as Volunteer")) {
                     button.setEnabled(false);
                 }
@@ -252,7 +250,6 @@ public class SiteDetailsFragment extends Fragment {
         }
     }
 
-    @SuppressLint("SetTextI18n")
     private void fetchSiteDetails() {
         Log.d(TAG, "fetchSiteDetails called for siteId: " + siteId);
         if (view == null) {
@@ -273,11 +270,12 @@ public class SiteDetailsFragment extends Fragment {
                             String timeRange = String.format("From %s to %s", site.getDonationStartTime(), site.getDonationEndTime());
                             siteHoursTextView.setText(timeRange);
                             siteDaysTextView.setText(formatOperatingDays(site.getDonationDays()));
-                            requiredBloodTypesTextView.setText("Blood Types: " + formatBloodTypes(site.getRequiredBloodTypes()));
-                            contactPhoneTextView.setText("Phone: " + site.getContactPhone());
-                            contactEmailTextView.setText("Email: " + site.getContactEmail());
+                            requiredBloodTypesTextView.setText(formatBloodTypes(site.getRequiredBloodTypes()));
+                            contactPhoneTextView.setText("Contact Phone: " + site.getContactPhone());
+                            contactEmailTextView.setText("Contact Email: " + site.getContactEmail());
                             descriptionTextView.setText("Description: " + site.getDescription());
                             statusTextView.setText("Status: " + site.getStatus());
+
                         }
                     } else {
                         Log.e(TAG, "Site not found");
@@ -309,45 +307,6 @@ public class SiteDetailsFragment extends Fragment {
             return true;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    private void handleRegisterToDonate(int numDonors) {
-        if (currentUser != null) {
-            if (numDonors == 1) {
-                // Directly register the current user
-                registerCurrentUser(currentUser.getUid(), siteId);
-            } else {
-                // Open a form or dialog to register multiple donors
-                openRegistrationFormFragment();
-            }
-        } else {
-            Toast.makeText(getContext(), "User not signed in.", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void registerCurrentUser(String userId, String siteId) {
-        // Assuming the current user is always included as the first registrant
-        Map<String, Object> registrant = new HashMap<>();
-        registrant.put("firstName", currentUser.getDisplayName()); // Or fetch from user profile
-        registrant.put("lastName", ""); // Add last name if available
-        registrant.put("email", currentUser.getEmail());
-        registrant.put("isDonor", true); // Marking the registering user as a donor
-
-        List<Map<String, Object>> registrants = new ArrayList<>();
-        registrants.add(registrant);
-
-        Registration registration = new Registration(userId, siteId, new Date(), false, 1, registrants);
-
-        db.collection("registrations")
-                .add(registration)
-                .addOnSuccessListener(documentReference -> {
-                    Toast.makeText(getContext(), "Registration successful", Toast.LENGTH_SHORT).show();
-                    disableRegistrationButtons();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error adding registration", e);
-                    Toast.makeText(getContext(), "Registration failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
     }
 
     private void openRegistrationFormFragment() {
