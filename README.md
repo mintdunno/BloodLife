@@ -2,8 +2,9 @@
 
 ## Student Details
 
-- **Student ID:** sadasdas
-- **Student Name:** ASDSDADSAD
+- **Student ID:** s3911737
+- **Student Name:** Tran Ngoc Minh
+- **Github Clone:** https://github.com/mintdunno/BloodLife.git
 
 ---
 
