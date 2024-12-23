@@ -107,31 +107,29 @@ public class SiteDetailsFragment extends Fragment {
     private void checkUserRoleAndAddButtons(String managerId) {
         if (currentUser != null) {
             String userId = currentUser.getUid();
+            // Assuming `User` data doesn't change frequently, fetch it once and store locally
             db.collection("users").document(userId).get().addOnCompleteListener(task -> {
                 if (task.isSuccessful() && task.getResult() != null) {
-                    DocumentSnapshot userSnapshot = task.getResult();
-                    User user = userSnapshot.toObject(User.class);
+                    User user = task.getResult().toObject(User.class);
                     if (user != null) {
                         if ("Site Manager".equals(user.getUserType())) {
-                            // Check if the current user is the manager of this site
                             if (managerId.equals(userId)) {
                                 addSiteManagerButtons();
                                 addEditAndDeleteButtons();
                             } else {
-                                // Allow any site manager to register as a volunteer
                                 addRegisterAsVolunteerButton();
                             }
                         } else {
-                            // User is a donor
                             addDonorButtons();
                         }
                     }
                 } else {
-                    Log.e(TAG, "Error fetching user role", task.getException());
+                    Log.e(TAG, "Failed to fetch user role", task.getException());
                 }
             });
         }
     }
+
 
     private void addSiteManagerButtons() {
         Button registerAsVolunteerButton = createStyledButton("Register as Volunteer");
@@ -310,17 +308,23 @@ public class SiteDetailsFragment extends Fragment {
     }
 
 
-    private void updateExistingRegistration(String existingRegistrationId, String userId) {
-        // Update the existing registration to set isVolunteer to false
-        db.collection("registrations").document(existingRegistrationId)
-                .update("isVolunteer", false)
+    private void updateExistingRegistration(String registrationId, String siteId) {
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("siteId", siteId); // Update the site ID
+        updates.put("registrationDate", new Date()); // Update the registration date
+
+        db.collection("registrations").document(registrationId)
+                .update(updates)
                 .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Existing registration updated successfully");
-                    // Register as a volunteer for the current site
-                    registerForEvent(userId, siteId, true, 0);
+                    Log.d(TAG, "Registration updated successfully.");
+                    Toast.makeText(getContext(), "Your volunteer registration has been updated to this site.", Toast.LENGTH_SHORT).show();
                 })
-                .addOnFailureListener(e -> Log.e(TAG, "Error updating existing registration", e));
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error updating registration", e);
+                    Toast.makeText(getContext(), "Failed to update registration: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
+
 
     private void handleRegisterAsVolunteer() {
         String userId = mAuth.getCurrentUser().getUid();
@@ -442,9 +446,9 @@ public class SiteDetailsFragment extends Fragment {
     }
 
     private void fetchSiteDetails() {
-        Log.d(TAG, "fetchSiteDetails called for siteId: " + siteId);
+        Log.d(TAG, "Fetching site details for siteId: " + siteId);
         if (view == null) {
-            Log.e(TAG, "View is null in fetchSiteDetails");
+            Log.e(TAG, "View is null, cannot fetch site details.");
             return;
         }
 
@@ -454,28 +458,58 @@ public class SiteDetailsFragment extends Fragment {
                     if (documentSnapshot.exists()) {
                         DonationSite site = documentSnapshot.toObject(DonationSite.class);
                         if (site != null) {
-                            siteNameTextView.setText(site.getSiteName());
-                            siteAddressTextView.setText(site.getAddress());
-                            String startEndDate = String.format("%s - %s", site.getStartDate(), site.getEndDate());
-                            siteStartEndDateTextView.setText(startEndDate);
-                            String timeRange = String.format("From %s to %s", site.getDonationStartTime(), site.getDonationEndTime());
-                            siteHoursTextView.setText(timeRange);
-                            siteDaysTextView.setText(formatOperatingDays(site.getDonationDays()));
-                            requiredBloodTypesTextView.setText(formatBloodTypes(site.getRequiredBloodTypes()));
-                            contactPhoneTextView.setText("Contact Phone: " + site.getContactPhone());
-                            contactEmailTextView.setText("Contact Email: " + site.getContactEmail());
-                            descriptionTextView.setText("Description: " + site.getDescription());
-                            statusTextView.setText("Status: " + site.getStatus());
-                            checkUserRoleAndAddButtons(site.getManagerId());
+                            displaySiteDetails(site);
                         }
                     } else {
-                        Log.e(TAG, "Site not found");
+                        showRetryDialog("Site not found", "Retry fetching site details?");
                     }
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error fetching site details", e);
+                    showRetryDialog("Error fetching site details", "Would you like to try again?");
                 });
     }
+
+    private void showRetryDialog(String title, String message) {
+        new AlertDialog.Builder(getContext())
+                .setTitle(title)
+                .setMessage(message)
+                .setPositiveButton("Retry", (dialog, which) -> fetchSiteDetails())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+    private void displaySiteDetails(DonationSite site) {
+        siteNameTextView.setText(site.getSiteName());
+        siteAddressTextView.setText(site.getAddress());
+
+        // Format and set the start and end date
+        String startEndDate = String.format("%s - %s", site.getStartDate(), site.getEndDate());
+        siteStartEndDateTextView.setText(startEndDate);
+
+        // Format and set the donation hours
+        String timeRange = String.format("From %s to %s", site.getDonationStartTime(), site.getDonationEndTime());
+        siteHoursTextView.setText(timeRange);
+
+        // Format and set operating days
+        siteDaysTextView.setText(formatOperatingDays(site.getDonationDays()));
+
+        // Format and set required blood types
+        requiredBloodTypesTextView.setText(formatBloodTypes(site.getRequiredBloodTypes()));
+
+        // Set contact details
+        contactPhoneTextView.setText("Phone: " + (site.getContactPhone() != null ? site.getContactPhone() : "N/A"));
+        contactEmailTextView.setText("Email: " + (site.getContactEmail() != null ? site.getContactEmail() : "N/A"));
+
+        // Set the description
+        descriptionTextView.setText("Description: " + (site.getDescription() != null ? site.getDescription() : "N/A"));
+
+        // Set the site status
+        statusTextView.setText("Status: " + (site.getStatus() != null ? site.getStatus() : "Unknown"));
+
+        // Handle roles and button setup
+        checkUserRoleAndAddButtons(site.getManagerId());
+    }
+
 
     private String formatOperatingDays(List<String> donationDays) {
         if (donationDays == null || donationDays.isEmpty()) {
