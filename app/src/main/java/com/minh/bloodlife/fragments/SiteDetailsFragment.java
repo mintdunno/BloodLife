@@ -629,38 +629,49 @@ public class SiteDetailsFragment extends Fragment {
 
         db.collection("registrations")
                 .whereEqualTo("siteId", siteId)
-                .whereEqualTo("numDonors", 1) // This ensures we are considering only the donors
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         List<String> donorIds = new ArrayList<>();
+
                         for (QueryDocumentSnapshot document : task.getResult()) {
-                            // Assuming 'registrants' is a list of maps, and each map has a 'userId' key
+                            Log.d(TAG, "Document data: " + document.getData());
+
+                            // Case 1: Process registrants array
                             List<Map<String, Object>> registrants = (List<Map<String, Object>>) document.get("registrants");
                             if (registrants != null) {
                                 for (Map<String, Object> registrant : registrants) {
-                                    String userId = (String) registrant.get("userId");
-                                    if (userId != null) {
-                                        donorIds.add(userId);
+                                    if (Boolean.TRUE.equals(registrant.get("isDonor"))) { // Ensure donor flag is checked
+                                        String userId = (String) registrant.get("userId");
+                                        if (userId != null) {
+                                            donorIds.add(userId);
+                                        }
                                     }
+                                }
+                            }
+
+                            // Case 2: Process individual donors
+                            if (Boolean.TRUE.equals(document.getBoolean("isVolunteer"))) {
+                                String userId = document.getString("userId");
+                                if (userId != null) {
+                                    donorIds.add(userId);
                                 }
                             }
                         }
 
                         if (!donorIds.isEmpty()) {
+                            Log.d(TAG, "Donor IDs collected: " + donorIds);
                             fetchDonorDetailsAndGenerateFile(donorIds);
                         } else {
-                            hideProgressBar();
+                            Log.d(TAG, "No registrants found for this site.");
                             Toast.makeText(getContext(), "No donors found for this site.", Toast.LENGTH_SHORT).show();
                         }
                     } else {
-                        hideProgressBar();
-                        Log.e(TAG, "Error getting registrations: ", task.getException());
+                        Log.e(TAG, "Error executing query: ", task.getException());
                         Toast.makeText(getContext(), "Failed to fetch donor data.", Toast.LENGTH_SHORT).show();
                     }
                 });
     }
-
     private void fetchDonorDetailsAndGenerateFile(List<String> donorIds) {
         db.collection("users")
                 .whereIn("uid", donorIds)
@@ -684,7 +695,6 @@ public class SiteDetailsFragment extends Fragment {
                     }
                 });
     }
-
     private void generateAndDownloadFile(List<User> donors) {
         // Choose CSV or JSON format (I'll demonstrate CSV here)
         String fileContent = generateCsvContent(donors);
