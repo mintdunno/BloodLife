@@ -1,10 +1,16 @@
 package com.minh.bloodlife.fragments;
 
+import android.Manifest;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -13,16 +19,20 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.Button;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
@@ -30,17 +40,22 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.minh.bloodlife.R;
 import com.minh.bloodlife.model.DonationSite;
 import com.minh.bloodlife.model.Registration;
 import com.minh.bloodlife.model.User;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -51,15 +66,21 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class SiteDetailsFragment extends Fragment {
+
     private static final String TAG = "SiteDetailsFragment";
     private static final String ARG_SITE_ID = "siteId";
+    private static final int CREATE_FILE = 1;
     private String siteId;
-    private TextView siteNameTextView, siteAddressTextView, siteHoursTextView, requiredBloodTypesTextView, siteDaysTextView, siteStartEndDateTextView, contactPhoneTextView, contactEmailTextView, descriptionTextView, statusTextView;
+    private TextView siteNameTextView, siteAddressTextView, siteHoursTextView, requiredBloodTypesTextView,
+            siteDaysTextView, siteStartEndDateTextView, contactPhoneTextView, contactEmailTextView, descriptionTextView,
+            statusTextView;
     private LinearLayout buttonLayout;
     private View view;
     private FirebaseFirestore db;
     private FirebaseAuth mAuth;
     private FirebaseUser currentUser;
+    private ProgressBar searchProgressBar;
+    private List<User> donors;
 
     public static SiteDetailsFragment newInstance(String siteId) {
         SiteDetailsFragment fragment = new SiteDetailsFragment();
@@ -98,6 +119,7 @@ public class SiteDetailsFragment extends Fragment {
         contactEmailTextView = view.findViewById(R.id.contactEmailTextView);
         descriptionTextView = view.findViewById(R.id.descriptionTextView);
         statusTextView = view.findViewById(R.id.statusTextView);
+        searchProgressBar = view.findViewById(R.id.searchProgressBar);
 
         // Fetch site details first to check if the user is a manager of this site
         fetchSiteDetails();
@@ -131,7 +153,6 @@ public class SiteDetailsFragment extends Fragment {
         }
     }
 
-
     private void addSiteManagerButtons() {
         Button registerAsVolunteerButton = createStyledButton("Register as Volunteer");
         registerAsVolunteerButton.setOnClickListener(v -> {
@@ -151,11 +172,30 @@ public class SiteDetailsFragment extends Fragment {
             openSiteStatsFragment();
         });
 
+        Button downloadDonorsButton = createStyledButton("Download Donors List");
+        downloadDonorsButton.setOnClickListener(v -> {
+            handleButtonAnimation(downloadDonorsButton);
+            downloadDonorList();
+        });
+
+        Button postDonationDataButton = createStyledButton("Post-Donation Data");
+        postDonationDataButton.setOnClickListener(v -> {
+            handleButtonAnimation(postDonationDataButton);
+            openPostDonationDataDialog();
+        });
+
         buttonLayout.addView(registerAsVolunteerButton);
         buttonLayout.addView(getDirectionsButton);
         buttonLayout.addView(viewStatisticsButton);
+        buttonLayout.addView(downloadDonorsButton);
+        buttonLayout.addView(postDonationDataButton);
 
         checkIfUserIsRegistered();
+    }
+
+    private void openPostDonationDataDialog() {
+        PostDonationDataFragment dialogFragment = PostDonationDataFragment.newInstance(siteId);
+        dialogFragment.show(getChildFragmentManager(), "PostDonationDataFragment");
     }
 
     private void openSiteStatsFragment() {
@@ -235,6 +275,7 @@ public class SiteDetailsFragment extends Fragment {
 
         checkIfUserIsRegistered();
     }
+
     private void addRegisterAsVolunteerButton() {
         Button registerAsVolunteerButton = createStyledButton("Register as Volunteer");
         registerAsVolunteerButton.setOnClickListener(v -> {
@@ -243,6 +284,7 @@ public class SiteDetailsFragment extends Fragment {
         });
 
         buttonLayout.addView(registerAsVolunteerButton);
+
         checkIfUserIsRegistered();
     }
 
@@ -264,7 +306,8 @@ public class SiteDetailsFragment extends Fragment {
                                 if (!existingSiteId.equals(siteId)) {
                                     showVolunteerConfirmationDialog(userId, existingSiteId, document.getId());
                                 } else {
-                                    Toast.makeText(getContext(), "You are already registered as a volunteer for this site.", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(getContext(), "You are already registered as a volunteer for this site.",
+                                            Toast.LENGTH_SHORT).show();
                                 }
                             }
                         } else {
@@ -286,7 +329,6 @@ public class SiteDetailsFragment extends Fragment {
                             existingSiteName = existingSite.getSiteName();
                         }
                     }
-
                     new AlertDialog.Builder(getContext())
                             .setTitle("Change Volunteer Site")
                             .setMessage("You are already registered as a volunteer at " + existingSiteName + ". Do you want to switch to volunteering at this site instead?")
@@ -305,7 +347,6 @@ public class SiteDetailsFragment extends Fragment {
                 });
     }
 
-
     private void updateExistingRegistration(String registrationId, String siteId) {
         Map<String, Object> updates = new HashMap<>();
         updates.put("siteId", siteId);
@@ -315,14 +356,15 @@ public class SiteDetailsFragment extends Fragment {
                 .update(updates)
                 .addOnSuccessListener(aVoid -> {
                     Log.d("SiteDetailsFragment", "Registration updated successfully - siteId: " + siteId);
-                    Toast.makeText(getContext(), "Your volunteer registration has been updated to this site.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Your volunteer registration has been updated to this site.",
+                            Toast.LENGTH_SHORT).show();
                 })
                 .addOnFailureListener(e -> {
                     Log.e("SiteDetailsFragment", "Error updating registration", e);
-                    Toast.makeText(getContext(), "Failed to update registration: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Failed to update registration: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
                 });
     }
-
 
     private void handleRegisterAsVolunteer() {
         String userId = mAuth.getCurrentUser().getUid();
@@ -336,7 +378,6 @@ public class SiteDetailsFragment extends Fragment {
 
     private void registerForEvent(String userId, String siteId, boolean isVolunteer, int numDonors) {
         Log.d("SiteDetailsFragment", "Registering volunteer - userId: " + userId + ", siteId: " + siteId);
-
         Map<String, Object> registration = new HashMap<>();
         registration.put("userId", userId); // Save the userId
         registration.put("siteId", siteId); // Save the siteId
@@ -357,11 +398,11 @@ public class SiteDetailsFragment extends Fragment {
                 });
     }
 
-
     private Button createStyledButton(String text) {
         Button button = new Button(getContext());
         button.setText(text);
-        button.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(getContext(), R.color.button_background_color)));
+        button.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(getContext(),
+                R.color.button_background_color)));
         button.setTextColor(ContextCompat.getColor(getContext(), R.color.white)); // Set text color to white
 
         // Set button width to match parent (fill the width of buttonLayout)
@@ -480,38 +521,30 @@ public class SiteDetailsFragment extends Fragment {
                 .setNegativeButton("Cancel", null)
                 .show();
     }
+
     private void displaySiteDetails(DonationSite site) {
         siteNameTextView.setText(site.getSiteName());
         siteAddressTextView.setText(site.getAddress());
-
         // Format and set the start and end date
         String startEndDate = String.format("%s - %s", site.getStartDate(), site.getEndDate());
         siteStartEndDateTextView.setText(startEndDate);
-
         // Format and set the donation hours
         String timeRange = String.format("From %s to %s", site.getDonationStartTime(), site.getDonationEndTime());
         siteHoursTextView.setText(timeRange);
-
         // Format and set operating days
         siteDaysTextView.setText(formatOperatingDays(site.getDonationDays()));
-
         // Format and set required blood types
         requiredBloodTypesTextView.setText(formatBloodTypes(site.getRequiredBloodTypes()));
-
         // Set contact details
         contactPhoneTextView.setText("Phone: " + (site.getContactPhone() != null ? site.getContactPhone() : "N/A"));
         contactEmailTextView.setText("Email: " + (site.getContactEmail() != null ? site.getContactEmail() : "N/A"));
-
         // Set the description
         descriptionTextView.setText("Description: " + (site.getDescription() != null ? site.getDescription() : "N/A"));
-
         // Set the site status
         statusTextView.setText("Status: " + (site.getStatus() != null ? site.getStatus() : "Unknown"));
-
         // Handle roles and button setup
         checkUserRoleAndAddButtons(site.getManagerId());
     }
-
 
     private String formatOperatingDays(List<String> donationDays) {
         if (donationDays == null || donationDays.isEmpty()) {
@@ -572,6 +605,139 @@ public class SiteDetailsFragment extends Fragment {
             });
         } else {
             Toast.makeText(getContext(), "Site ID is not available.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void downloadDonorList() {
+        fetchDonorDataAndDownload();
+    }
+
+    private void showProgressBar() {
+        if (searchProgressBar != null) {
+            searchProgressBar.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void hideProgressBar() {
+        if (searchProgressBar != null) {
+            searchProgressBar.setVisibility(View.GONE);
+        }
+    }
+    private void fetchDonorDataAndDownload() {
+        showProgressBar();
+
+        db.collection("registrations")
+                .whereEqualTo("siteId", siteId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        List<String> donorIds = new ArrayList<>();
+                        for (DocumentSnapshot doc : task.getResult()) {
+                            List<Map<String, Object>> registrants = (List<Map<String, Object>>) doc.get("registrants");
+                            if (registrants != null) {
+                                for (Map<String, Object> registrant : registrants) {
+                                    String userId = (String) registrant.get("userId");
+                                    if (userId != null) {
+                                        donorIds.add(userId);
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!donorIds.isEmpty()) {
+                            fetchDonorDetailsAndGenerateFile(donorIds);
+                        } else {
+                            hideProgressBar();
+                            Toast.makeText(getContext(), "No donors found for this site.", Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        hideProgressBar();
+                        Log.e(TAG, "Error getting registrations: ", task.getException());
+                        Toast.makeText(getContext(), "Failed to fetch donor data.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void fetchDonorDetailsAndGenerateFile(List<String> donorIds) {
+        db.collection("users")
+                .whereIn("uid", donorIds)
+                .get()
+                .addOnCompleteListener(task -> {
+                    hideProgressBar();
+                    if (task.isSuccessful()) {
+                        donors = new ArrayList<>();
+                        for (DocumentSnapshot document : task.getResult()) {
+                            donors.add(document.toObject(User.class));
+                        }
+
+                        if (!donors.isEmpty()) {
+                            generateAndDownloadFile(donors);
+                        } else {
+                            Toast.makeText(getContext(), "No donor details found.", Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        Log.e(TAG, "Error getting user details: ", task.getException());
+                        Toast.makeText(getContext(), "Failed to fetch donor details.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void generateAndDownloadFile(List<User> donors) {
+        // Choose CSV or JSON format (I'll demonstrate CSV here)
+        String fileContent = generateCsvContent(donors);
+        String filename = "donors_" + siteId + "_" + System.currentTimeMillis() + ".csv";
+
+        // Use Storage Access Framework to let the user choose the download location
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("text/csv");
+        intent.putExtra(Intent.EXTRA_TITLE, filename);
+
+        startActivityForResult(intent, CREATE_FILE);
+    }
+
+    private String generateCsvContent(List<User> donors) {
+        StringBuilder csvBuilder = new StringBuilder();
+        // Add CSV header
+        csvBuilder.append("First Name,Last Name,Email,Phone Number,Blood Type\n");
+
+        // Add donor data
+        for (User donor : donors) {
+            csvBuilder.append(donor.getFirstName()).append(",");
+            csvBuilder.append(donor.getLastName()).append(",");
+            csvBuilder.append(donor.getEmail() != null ? donor.getEmail() : "").append(",");
+            csvBuilder.append(donor.getPhoneNumber() != null ? donor.getPhoneNumber() : "").append(",");
+            csvBuilder.append(donor.getBloodType() != null ? donor.getBloodType() : "").append("\n");
+        }
+
+        return csvBuilder.toString();
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == CREATE_FILE && resultCode == Activity.RESULT_OK) {
+            if (data != null && data.getData() != null) {
+                Uri uri = data.getData();
+                // Write the file content to the selected URI
+                writeCsvToFile(uri, generateCsvContent(donors)); // donors should be accessible here
+            }
+        }
+    }
+
+    private void writeCsvToFile(Uri uri, String content) {
+        try {
+            OutputStream outputStream = requireContext().getContentResolver().openOutputStream(uri);
+            if (outputStream != null) {
+                outputStream.write(content.getBytes());
+                outputStream.close();
+                Toast.makeText(getContext(), "File saved successfully.", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(getContext(), "Failed to save file.", Toast.LENGTH_SHORT).show();
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "Error writing to file: ", e);
+            Toast.makeText(getContext(), "Failed to save file.", Toast.LENGTH_SHORT).show();
         }
     }
 }
