@@ -333,8 +333,8 @@ public class SiteDetailsFragment extends Fragment {
                             .setTitle("Change Volunteer Site")
                             .setMessage("You are already registered as a volunteer at " + existingSiteName + ". Do you want to switch to volunteering at this site instead?")
                             .setPositiveButton("Yes", (dialog, which) -> {
-                                // Update the existing registration to mark as not a volunteer and register for the new site
-                                updateExistingRegistration(existingRegistrationId, userId);
+                                // Pass the correct new siteId
+                                updateExistingRegistration(existingRegistrationId, siteId);
                             })
                             .setNegativeButton("No", (dialog, which) -> {
                                 dialog.dismiss();
@@ -346,6 +346,7 @@ public class SiteDetailsFragment extends Fragment {
                     Toast.makeText(getContext(), "Error fetching existing site details.", Toast.LENGTH_SHORT).show();
                 });
     }
+
 
     private void updateExistingRegistration(String registrationId, String siteId) {
         Map<String, Object> updates = new HashMap<>();
