@@ -1,5 +1,6 @@
 package com.minh.bloodlife.fragments;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.net.Uri;
@@ -23,8 +24,6 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.appcompat.app.AlertDialog;
-
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -98,13 +97,13 @@ public class SiteDetailsFragment extends Fragment {
         descriptionTextView = view.findViewById(R.id.descriptionTextView);
         statusTextView = view.findViewById(R.id.statusTextView);
 
-        checkUserRoleAndAddButtons();
+        // Fetch site details first to check if the user is a manager of this site
         fetchSiteDetails();
 
         return view;
     }
 
-    private void checkUserRoleAndAddButtons() {
+    private void checkUserRoleAndAddButtons(String managerId) {
         if (currentUser != null) {
             String userId = currentUser.getUid();
             db.collection("users").document(userId).get().addOnCompleteListener(task -> {
@@ -113,8 +112,16 @@ public class SiteDetailsFragment extends Fragment {
                     User user = userSnapshot.toObject(User.class);
                     if (user != null) {
                         if ("Site Manager".equals(user.getUserType())) {
-                            addSiteManagerButtons();
+                            // Check if the current user is the manager of this site
+                            if (managerId.equals(userId)) {
+                                addSiteManagerButtons();
+                                addEditAndDeleteButtons();
+                            } else {
+                                // Allow any site manager to register as a volunteer
+                                addRegisterAsVolunteerButton();
+                            }
                         } else {
+                            // User is a donor
                             addDonorButtons();
                         }
                     }
@@ -125,10 +132,81 @@ public class SiteDetailsFragment extends Fragment {
         }
     }
 
+    private void addSiteManagerButtons() {
+        Button registerAsVolunteerButton = createStyledButton("Register as Volunteer");
+        registerAsVolunteerButton.setOnClickListener(v -> {
+            handleButtonAnimation(registerAsVolunteerButton);
+            checkIfAlreadyVolunteering(currentUser.getUid());
+        });
+
+        // Add Get Directions Button for Site Managers
+        Button getDirectionsButton = createStyledButton("Get Directions");
+        getDirectionsButton.setOnClickListener(v -> {
+            handleButtonAnimation(getDirectionsButton);
+            getDirectionsToSite();
+        });
+
+        buttonLayout.addView(registerAsVolunteerButton);
+        buttonLayout.addView(getDirectionsButton);
+
+        checkIfUserIsRegistered();
+    }
+
+    private void addEditAndDeleteButtons() {
+        Button editSiteButton = createStyledButton("Edit Site");
+        editSiteButton.setOnClickListener(v -> {
+            handleButtonAnimation(editSiteButton);
+            openEditSiteFragment();
+        });
+
+        Button deleteSiteButton = createStyledButton("Delete Site");
+        deleteSiteButton.setOnClickListener(v -> {
+            handleButtonAnimation(deleteSiteButton);
+            showDeleteConfirmationDialog();
+        });
+
+        buttonLayout.addView(editSiteButton);
+        buttonLayout.addView(deleteSiteButton);
+    }
+
+    private void openEditSiteFragment() {
+        EditSiteFragment editSiteFragment = EditSiteFragment.newInstance(siteId);
+        getActivity().getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragmentContainer, editSiteFragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
+    private void showDeleteConfirmationDialog() {
+        new AlertDialog.Builder(getContext())
+                .setTitle("Delete Site")
+                .setMessage("Are you sure you want to delete this site?")
+                .setPositiveButton("Delete", (dialog, which) -> deleteSite())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void deleteSite() {
+        db.collection("donationSites").document(siteId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(getContext(), "Site deleted successfully", Toast.LENGTH_SHORT).show();
+                    // Navigate back to the previous fragment
+                    if (getFragmentManager() != null) {
+                        getFragmentManager().popBackStack();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error deleting site", e);
+                    Toast.makeText(getContext(), "Error deleting site", Toast.LENGTH_SHORT).show();
+                });
+    }
+
     private void addDonorButtons() {
         Button registerToDonateButton = createStyledButton("Register to Donate");
         registerToDonateButton.setOnClickListener(v -> {
             handleButtonAnimation(registerToDonateButton);
+            // Directly call handleRegisterToDonate with numDonors set to 1
             openRegistrationFormFragment();
         });
 
@@ -143,23 +221,14 @@ public class SiteDetailsFragment extends Fragment {
 
         checkIfUserIsRegistered();
     }
-
-    private void addSiteManagerButtons() {
+    private void addRegisterAsVolunteerButton() {
         Button registerAsVolunteerButton = createStyledButton("Register as Volunteer");
         registerAsVolunteerButton.setOnClickListener(v -> {
             handleButtonAnimation(registerAsVolunteerButton);
             checkIfAlreadyVolunteering(currentUser.getUid());
         });
 
-        Button getDirectionsButton = createStyledButton("Get Directions");
-        getDirectionsButton.setOnClickListener(v -> {
-            handleButtonAnimation(getDirectionsButton);
-            getDirectionsToSite();
-        });
-
         buttonLayout.addView(registerAsVolunteerButton);
-        buttonLayout.addView(getDirectionsButton);
-
         checkIfUserIsRegistered();
     }
 
@@ -207,13 +276,12 @@ public class SiteDetailsFragment extends Fragment {
                         }
                     }
 
-                    // Use the imported AlertDialog class here
                     new AlertDialog.Builder(getContext())
                             .setTitle("Change Volunteer Site")
                             .setMessage("You are already registered as a volunteer at " + existingSiteName + ". Do you want to switch to volunteering at this site instead?")
                             .setPositiveButton("Yes", (dialog, which) -> {
-                                updateExistingRegistration(existingRegistrationId);
-                                registerForEvent(userId, siteId, true, 0);
+                                // Update the existing registration to mark as not a volunteer and register for the new site
+                                updateExistingRegistration(existingRegistrationId, userId);
                             })
                             .setNegativeButton("No", (dialog, which) -> {
                                 dialog.dismiss();
@@ -227,13 +295,47 @@ public class SiteDetailsFragment extends Fragment {
     }
 
 
-    private void updateExistingRegistration(String registrationId) {
-        db.collection("registrations").document(registrationId)
+    private void updateExistingRegistration(String existingRegistrationId, String userId) {
+        // Update the existing registration to set isVolunteer to false
+        db.collection("registrations").document(existingRegistrationId)
                 .update("isVolunteer", false)
-                .addOnSuccessListener(aVoid -> Log.d(TAG, "Existing registration updated successfully."))
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Existing registration updated successfully");
+                    // Register as a volunteer for the current site
+                    registerForEvent(userId, siteId, true, 0);
+                })
                 .addOnFailureListener(e -> Log.e(TAG, "Error updating existing registration", e));
     }
 
+    private void handleRegisterAsVolunteer() {
+        String userId = mAuth.getCurrentUser().getUid();
+        if (userId != null) {
+            registerForEvent(userId, siteId, true, 0);
+        } else {
+            Toast.makeText(getContext(), "User not signed in.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void registerForEvent(String userId, String siteId, boolean isVolunteer, int numDonors) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        Map<String, Object> registration = new HashMap<>();
+        registration.put("userId", userId);
+        registration.put("siteId", siteId);
+        registration.put("registrationDate", new Date());
+        registration.put("isVolunteer", isVolunteer);
+        registration.put("numDonors", numDonors);
+
+        db.collection("registrations")
+                .add(registration)
+                .addOnSuccessListener(documentReference -> {
+                    Toast.makeText(getContext(), "Registration successful", Toast.LENGTH_SHORT).show();
+                    disableRegistrationButtons();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error adding registration", e);
+                    Toast.makeText(getContext(), "Registration failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
 
     private Button createStyledButton(String text) {
         Button button = new Button(getContext());
@@ -288,15 +390,13 @@ public class SiteDetailsFragment extends Fragment {
     }
 
     private void disableRegistrationButtons() {
-        if (buttonLayout != null) {
-            for (int i = 0; i < buttonLayout.getChildCount(); i++) {
-                View child = buttonLayout.getChildAt(i);
-                if (child instanceof Button) {
-                    Button button = (Button) child;
-                    if (button.getText().equals("Register to Donate") ||
-                            button.getText().equals("Register as Volunteer")) {
-                        button.setEnabled(false);
-                    }
+        for (int i = 0; i < buttonLayout.getChildCount(); i++) {
+            View child = buttonLayout.getChildAt(i);
+            if (child instanceof Button) {
+                Button button = (Button) child;
+                if (button.getText().equals("Register to Donate") ||
+                        button.getText().equals("Register as Volunteer")) {
+                    button.setEnabled(false);
                 }
             }
         }
@@ -351,7 +451,7 @@ public class SiteDetailsFragment extends Fragment {
                             contactEmailTextView.setText("Contact Email: " + site.getContactEmail());
                             descriptionTextView.setText("Description: " + site.getDescription());
                             statusTextView.setText("Status: " + site.getStatus());
-
+                            checkUserRoleAndAddButtons(site.getManagerId());
                         }
                     } else {
                         Log.e(TAG, "Site not found");
@@ -391,36 +491,6 @@ public class SiteDetailsFragment extends Fragment {
                 .replace(R.id.fragmentContainer, registrationFormFragment)
                 .addToBackStack(null)
                 .commit();
-    }
-
-    private void handleRegisterAsVolunteer() {
-        String userId = mAuth.getCurrentUser().getUid();
-        if (userId != null) {
-            registerForEvent(userId, siteId, true, 0);
-        } else {
-            Toast.makeText(getContext(), "User not signed in.", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void registerForEvent(String userId, String siteId, boolean isVolunteer, int numDonors) {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        Map<String, Object> registration = new HashMap<>();
-        registration.put("userId", userId);
-        registration.put("siteId", siteId);
-        registration.put("registrationDate", new Date());
-        registration.put("isVolunteer", isVolunteer);
-        registration.put("numDonors", numDonors);
-
-        db.collection("registrations")
-                .add(registration)
-                .addOnSuccessListener(documentReference -> {
-                    Toast.makeText(getContext(), "Registration successful", Toast.LENGTH_SHORT).show();
-                    disableRegistrationButtons();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error adding registration", e);
-                    Toast.makeText(getContext(), "Registration failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
     }
 
     private void getDirectionsToSite() {
