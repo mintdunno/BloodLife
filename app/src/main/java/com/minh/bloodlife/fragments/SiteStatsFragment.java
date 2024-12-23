@@ -13,50 +13,34 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
 import com.minh.bloodlife.R;
 import com.minh.bloodlife.adapter.UserAdapter;
-import com.minh.bloodlife.model.DonationSite;
-import com.minh.bloodlife.model.Registration;
 import com.minh.bloodlife.model.User;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Collectors;
+
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class SiteStatsFragment extends Fragment {
-
     private static final String TAG = "SiteStatsFragment";
-    private static final String ARG_SITE_ID = "siteId";
-    private String siteId;
 
+    private String siteId;
     private FirebaseFirestore db;
 
-    private TextView totalVolunteersTextView;
-    private TextView totalDonorsTextView;
-    private RecyclerView volunteersRecyclerView;
-    private RecyclerView donorsRecyclerView;
-    private UserAdapter volunteersAdapter;
-    private UserAdapter donorsAdapter;
+    private TextView totalVolunteersTextView, totalDonorsTextView;
+    private RecyclerView volunteersRecyclerView, donorsRecyclerView;
 
     public static SiteStatsFragment newInstance(String siteId) {
         SiteStatsFragment fragment = new SiteStatsFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_SITE_ID, siteId);
+        args.putString("siteId", siteId);
         fragment.setArguments(args);
         return fragment;
     }
@@ -66,7 +50,7 @@ public class SiteStatsFragment extends Fragment {
         super.onCreate(savedInstanceState);
         db = FirebaseFirestore.getInstance();
         if (getArguments() != null) {
-            siteId = getArguments().getString(ARG_SITE_ID);
+            siteId = getArguments().getString("siteId");
         }
     }
 
@@ -80,93 +64,119 @@ public class SiteStatsFragment extends Fragment {
         volunteersRecyclerView = view.findViewById(R.id.volunteersRecyclerView);
         donorsRecyclerView = view.findViewById(R.id.donorsRecyclerView);
 
-        volunteersRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        donorsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        setupRecyclerView(volunteersRecyclerView);
+        setupRecyclerView(donorsRecyclerView);
 
-        fetchSiteStatistics();
+        fetchStatistics();
 
         return view;
     }
 
-    private void fetchSiteStatistics() {
-        // Fetch and display total number of volunteers
-        db.collection("registrations")
-                .whereEqualTo("siteId", siteId)
-                .whereEqualTo("isVolunteer", true)
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        int count = task.getResult().size();
-                        totalVolunteersTextView.setText("Total Volunteers: " + count);
-                    } else {
-                        Log.e(TAG, "Error fetching volunteer count", task.getException());
-                    }
-                });
-
-        // Fetch and display total number of donors
-        db.collection("registrations")
-                .whereEqualTo("siteId", siteId)
-                .whereEqualTo("isVolunteer", false)
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        int count = task.getResult().size();
-                        totalDonorsTextView.setText("Total Donors: " + count);
-                    } else {
-                        Log.e(TAG, "Error fetching donor count", task.getException());
-                    }
-                });
-
-        // Fetch and display the list of volunteers
-        fetchUserList(true, volunteersRecyclerView);
-
-        // Fetch and display the list of donors
-        fetchUserList(false, donorsRecyclerView);
+    private void setupRecyclerView(RecyclerView recyclerView) {
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerView.addItemDecoration(new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL));
     }
 
-    private void fetchUserList(boolean isVolunteer, RecyclerView recyclerView) {
+    private void fetchStatistics() {
+        fetchVolunteers();
+        fetchDonors();
+    }
+
+    private void fetchVolunteers() {
         db.collection("registrations")
-                .whereEqualTo("siteId", siteId)
-                .whereEqualTo("isVolunteer", isVolunteer)
+                .whereEqualTo("siteId", siteId) // Match the siteId for this site
+                .whereEqualTo("isVolunteer", true) // Only fetch volunteers
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         List<String> userIds = new ArrayList<>();
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            userIds.add(document.getString("userId"));
+                        for (DocumentSnapshot doc : task.getResult()) {
+                            Log.d("SiteStatsFragment", "Registration document: " + doc.getData()); // Log each registration document
+
+                            String userId = doc.getString("userId");
+                            if (userId != null) {
+                                userIds.add(userId); // Add userId to the list if it exists
+                            }
                         }
+                        Log.d("SiteStatsFragment", "Fetched User IDs: " + userIds); // Log all fetched userIds
+
+                        // Proceed to fetch user details if we have any userIds
                         if (!userIds.isEmpty()) {
-                            fetchUserDetails(userIds, recyclerView);
+                            fetchVolunteerDetails(userIds);
+                        } else {
+                            Log.d("SiteStatsFragment", "No volunteers found.");
+                            totalVolunteersTextView.setText("Total Volunteers: 0");
+                            volunteersRecyclerView.setAdapter(null);
                         }
                     } else {
-                        Log.e(TAG, "Error fetching user list", task.getException());
+                        Log.e("SiteStatsFragment", "Error fetching registrations", task.getException());
+                        totalVolunteersTextView.setText("Total Volunteers: 0");
+                        volunteersRecyclerView.setAdapter(null);
                     }
                 });
     }
 
-    private void fetchUserDetails(List<String> userIds, RecyclerView recyclerView) {
-        List<User> users = new ArrayList<>();
-        db.collection("users").whereIn("uid", userIds)
+
+    private void fetchVolunteerDetails(List<String> userIds) {
+        Log.d("SiteStatsFragment", "Fetching user details for User IDs: " + userIds); // Log userIds being fetched
+        db.collection("users")
+                .whereIn("uid", userIds)
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            User user = document.toObject(User.class);
-                            users.add(user);
+                        List<User> volunteers = new ArrayList<>();
+                        for (DocumentSnapshot userDoc : task.getResult()) {
+                            Log.d("SiteStatsFragment", "User document: " + userDoc.getData()); // Log each fetched user document
+                            User user = userDoc.toObject(User.class);
+                            volunteers.add(user);
                         }
-                        UserAdapter userAdapter = new UserAdapter(users);
-                        recyclerView.setAdapter(userAdapter);
+
+                        Log.d("SiteStatsFragment", "Fetched users count: " + volunteers.size()); // Log total users fetched
+                        totalVolunteersTextView.setText("Total Volunteers: " + volunteers.size());
+                        UserAdapter adapter = new UserAdapter(volunteers);
+                        volunteersRecyclerView.setAdapter(adapter); // Attach the adapter here
                     } else {
-                        Log.e(TAG, "Error fetching user details", task.getException());
+                        Log.e("SiteStatsFragment", "Error fetching user details", task.getException());
+                        totalVolunteersTextView.setText("Total Volunteers: 0");
+                        volunteersRecyclerView.setAdapter(null);
+                    }
+                });
+    }
+
+    private void fetchDonors() {
+        db.collection("registrations")
+                .whereEqualTo("siteId", siteId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        List<User> donors = new ArrayList<>();
+                        for (DocumentSnapshot doc : task.getResult()) {
+                            List<Map<String, Object>> registrants = (List<Map<String, Object>>) doc.get("registrants");
+                            if (registrants != null) {
+                                for (Map<String, Object> registrant : registrants) {
+                                    User user = new User();
+                                    user.setFirstName((String) registrant.get("firstName"));
+                                    user.setLastName((String) registrant.get("lastName"));
+                                    user.setEmail((String) registrant.get("email"));
+                                    user.setPhoneNumber((String) registrant.get("phone"));
+                                    donors.add(user);
+                                }
+                            }
+                        }
+                        totalDonorsTextView.setText("Total Donors: " + donors.size());
+                        UserAdapter adapter = new UserAdapter(donors);
+                        donorsRecyclerView.setAdapter(adapter);
+                    } else {
+                        Log.e(TAG, "Error fetching donors", task.getException());
+                        totalDonorsTextView.setText("Total Donors: 0");
+                        donorsRecyclerView.setAdapter(null);
                     }
                 });
     }
 
     @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        setHasOptionsMenu(true);
-
+    public void onResume() {
+        super.onResume();
         AppCompatActivity activity = (AppCompatActivity) getActivity();
         if (activity != null) {
             ActionBar actionBar = activity.getSupportActionBar();
@@ -186,15 +196,5 @@ public class SiteStatsFragment extends Fragment {
                 actionBar.setDisplayHomeAsUpEnabled(false);
             }
         }
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.id.home) {
-            // Navigate back to the previous fragment (SiteDetailsFragment)
-            getParentFragmentManager().popBackStack();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
     }
 }
