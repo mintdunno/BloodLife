@@ -105,4 +105,8 @@
         <item>Inactive</item>
         <item>Completed</item>
     </string-array>
+    <string name="total_volunteers">Total Volunteers: %d</string>
+    <string name="total_donors">Total Donors: %d</string>
+    <string name="volunteers">Volunteers:</string>
+    <string name="donors">Donors:</string>
 </resources>

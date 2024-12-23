@@ -24,6 +24,7 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -139,17 +140,31 @@ public class SiteDetailsFragment extends Fragment {
             checkIfAlreadyVolunteering(currentUser.getUid());
         });
 
-        // Add Get Directions Button for Site Managers
         Button getDirectionsButton = createStyledButton("Get Directions");
         getDirectionsButton.setOnClickListener(v -> {
             handleButtonAnimation(getDirectionsButton);
             getDirectionsToSite();
         });
 
+        Button viewStatisticsButton = createStyledButton("View Statistics");
+        viewStatisticsButton.setOnClickListener(v -> {
+            handleButtonAnimation(viewStatisticsButton);
+            openSiteStatsFragment();
+        });
+
         buttonLayout.addView(registerAsVolunteerButton);
         buttonLayout.addView(getDirectionsButton);
+        buttonLayout.addView(viewStatisticsButton);
 
         checkIfUserIsRegistered();
+    }
+
+    private void openSiteStatsFragment() {
+        SiteStatsFragment siteStatsFragment = SiteStatsFragment.newInstance(siteId);
+        FragmentTransaction transaction = requireActivity().getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.fragmentContainer, siteStatsFragment);
+        transaction.addToBackStack(null);
+        transaction.commit();
     }
 
     private void addEditAndDeleteButtons() {
