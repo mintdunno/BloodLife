@@ -309,13 +309,30 @@ public class CreateSiteFragment extends Fragment {
         // Convert the selected LatLng to a GeoPoint
         GeoPoint location = (selectedLatLng != null) ? new GeoPoint(selectedLatLng.latitude, selectedLatLng.longitude) : null;
 
-        // Create a new donation site object
-        DonationSite site = new DonationSite(siteName, siteAddress, location, donationStartTime, donationEndTime, donationDays,
-                requiredBloodTypes, managerId, startDate, endDate, contactPhone, contactEmail, description, status);
+        // Generate the searchable name
+        String searchableName = siteName.toLowerCase(Locale.ROOT);
+
+        // Create a map for the new site
+        Map<String, Object> siteData = new HashMap<>();
+        siteData.put("siteName", siteName);
+        siteData.put("siteAddress", siteAddress);
+        siteData.put("location", location);
+        siteData.put("donationStartTime", donationStartTime);
+        siteData.put("donationEndTime", donationEndTime);
+        siteData.put("donationDays", donationDays);
+        siteData.put("requiredBloodTypes", requiredBloodTypes);
+        siteData.put("managerId", managerId);
+        siteData.put("startDate", startDate);
+        siteData.put("endDate", endDate);
+        siteData.put("contactPhone", contactPhone);
+        siteData.put("contactEmail", contactEmail);
+        siteData.put("description", description);
+        siteData.put("status", status);
+        siteData.put("searchableName", searchableName); // Add searchable name for easier search functionality
 
         // Add the new site to Firestore
         db.collection("donationSites")
-                .add(site)
+                .add(siteData)
                 .addOnSuccessListener(documentReference -> {
                     Toast.makeText(getContext(), "Donation site created successfully", Toast.LENGTH_SHORT).show();
                     createSiteProgressBar.setVisibility(View.GONE);
@@ -327,6 +344,7 @@ public class CreateSiteFragment extends Fragment {
                     createSiteProgressBar.setVisibility(View.GONE);
                 });
     }
+
 
     private boolean validateInputFields(String siteName, String siteAddress, String donationStartTime, String donationEndTime,
                                         String startDate, String endDate, String contactPhone, String contactEmail, String description) {
