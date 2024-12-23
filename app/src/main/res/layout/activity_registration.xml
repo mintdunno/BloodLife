@@ -10,6 +10,7 @@
         android:layout_height="wrap_content"
         android:padding="16dp">
 
+        <!-- App Logo -->
         <ImageView
             android:id="@+id/imageViewLogo"
             android:layout_width="120dp"
@@ -19,6 +20,7 @@
             android:src="@drawable/bloodlife_logo"
             android:contentDescription="@string/app_logo" />
 
+        <!-- App Name -->
         <TextView
             android:id="@+id/textViewAppName"
             android:layout_width="wrap_content"
@@ -31,6 +33,7 @@
             android:textSize="24sp"
             android:textStyle="bold" />
 
+        <!-- First Name -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/textInputLayoutFirstName"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -50,6 +53,7 @@
 
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Last Name -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/textInputLayoutLastName"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -69,6 +73,7 @@
 
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Email -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/textInputLayoutEmail"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -88,6 +93,7 @@
 
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Password -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/textInputLayoutPassword"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -108,15 +114,37 @@
 
         </com.google.android.material.textfield.TextInputLayout>
 
-        <Spinner
-            android:id="@+id/spinnerUserType"
+        <!-- Phone Number -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/textInputLayoutPhone"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@id/textInputLayoutPassword"
             android:layout_marginTop="16dp"
+            app:hintTextColor="@color/neutral_gray">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editTextPhone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/phone_number"
+                android:inputType="phone"
+                android:textColor="@color/dark_gray" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- User Type -->
+        <Spinner
+            android:id="@+id/spinnerUserType"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/textInputLayoutPhone"
+            android:layout_marginTop="16dp"
             android:minHeight="48dp"
             android:entries="@array/user_types" />
 
+        <!-- Register Button -->
         <Button
             android:id="@+id/buttonRegister"
             android:layout_width="match_parent"
@@ -127,6 +155,7 @@
             android:text="@string/register"
             android:textColor="@color/white" />
 
+        <!-- Already Have an Account -->
         <TextView
             android:id="@+id/textViewLogin"
             android:layout_width="wrap_content"
