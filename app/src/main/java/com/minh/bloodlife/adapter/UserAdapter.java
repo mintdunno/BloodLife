@@ -4,10 +4,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.minh.bloodlife.R;
 import com.minh.bloodlife.model.User;
+
 import java.util.List;
 
 public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder> {
@@ -29,7 +32,9 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
     public void onBindViewHolder(@NonNull UserViewHolder holder, int position) {
         User user = userList.get(position);
         holder.userNameTextView.setText(String.format("%s %s", user.getFirstName(), user.getLastName()));
-        // Add other fields if necessary
+        holder.userEmailTextView.setText(user.getEmail());
+        holder.userPhoneTextView.setText(user.getPhoneNumber()); // Make sure this field exists in your User model
+        // Set other fields as necessary
     }
 
     @Override
@@ -38,13 +43,14 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
     }
 
     static class UserViewHolder extends RecyclerView.ViewHolder {
-        TextView userNameTextView;
-        // Add other TextViews for email, phone, etc. if needed
+        TextView userNameTextView, userEmailTextView, userPhoneTextView;
 
         UserViewHolder(View itemView) {
             super(itemView);
             userNameTextView = itemView.findViewById(R.id.userName);
-            // Initialize other TextViews here
+            userEmailTextView = itemView.findViewById(R.id.userEmail);
+            userPhoneTextView = itemView.findViewById(R.id.userPhone);
+            // Initialize other views as necessary
         }
     }
 }

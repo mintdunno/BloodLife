@@ -11,25 +11,14 @@
         android:layout_height="wrap_content"
         android:text="Total Volunteers: 0"
         android:textSize="18sp"
-        android:textStyle="bold"
         android:layout_marginBottom="8dp"/>
-
-    <TextView
-        android:id="@+id/totalDonorsTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Total Donors: 0"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="16dp"/>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Volunteers:"
+        android:text="@string/volunteers"
         android:textStyle="bold"
-        android:textSize="16sp"
-        android:layout_marginBottom="8dp"/>
+        android:textSize="16sp"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/volunteersRecyclerView"
@@ -38,12 +27,19 @@
         android:layout_marginBottom="16dp"/>
 
     <TextView
+        android:id="@+id/totalDonorsTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Donors:"
-        android:textStyle="bold"
-        android:textSize="16sp"
+        android:text="Total Donors: 0"
+        android:textSize="18sp"
         android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/donors"
+        android:textStyle="bold"
+        android:textSize="16sp"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/donorsRecyclerView"
