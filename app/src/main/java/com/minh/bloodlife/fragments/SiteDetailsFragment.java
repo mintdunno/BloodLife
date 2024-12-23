@@ -81,6 +81,8 @@ public class SiteDetailsFragment extends Fragment {
     private FirebaseUser currentUser;
     private ProgressBar searchProgressBar;
     private List<User> donors;
+    private List<Map<String, Object>> registrants;
+    private String csvData; // Stores the CSV content
 
     public static SiteDetailsFragment newInstance(String siteId) {
         SiteDetailsFragment fragment = new SiteDetailsFragment();
@@ -631,83 +633,57 @@ public class SiteDetailsFragment extends Fragment {
                 .whereEqualTo("siteId", siteId)
                 .get()
                 .addOnCompleteListener(task -> {
+                    hideProgressBar();
                     if (task.isSuccessful()) {
-                        List<String> donorIds = new ArrayList<>();
-
+                        List<Map<String, Object>> registrants = new ArrayList<>();
                         for (QueryDocumentSnapshot document : task.getResult()) {
-                            Log.d(TAG, "Document data: " + document.getData());
-
-                            // Case 1: Process registrants array
-                            List<Map<String, Object>> registrants = (List<Map<String, Object>>) document.get("registrants");
-                            if (registrants != null) {
-                                for (Map<String, Object> registrant : registrants) {
-                                    if (Boolean.TRUE.equals(registrant.get("isDonor"))) { // Ensure donor flag is checked
-                                        String userId = (String) registrant.get("userId");
-                                        if (userId != null) {
-                                            donorIds.add(userId);
-                                        }
+                            // Extract donors from 'registrants' array
+                            List<Map<String, Object>> documentRegistrants = (List<Map<String, Object>>) document.get("registrants");
+                            if (documentRegistrants != null) {
+                                for (Map<String, Object> registrant : documentRegistrants) {
+                                    if (Boolean.TRUE.equals(registrant.get("isDonor"))) {
+                                        registrants.add(registrant);
                                     }
                                 }
                             }
-
-                            // Case 2: Process individual donors
-                            if (Boolean.TRUE.equals(document.getBoolean("isVolunteer"))) {
-                                String userId = document.getString("userId");
-                                if (userId != null) {
-                                    donorIds.add(userId);
-                                }
-                            }
                         }
 
-                        if (!donorIds.isEmpty()) {
-                            Log.d(TAG, "Donor IDs collected: " + donorIds);
-                            fetchDonorDetailsAndGenerateFile(donorIds);
+                        if (!registrants.isEmpty()) {
+                            generateAndDownloadFile(registrants);
                         } else {
-                            Log.d(TAG, "No registrants found for this site.");
                             Toast.makeText(getContext(), "No donors found for this site.", Toast.LENGTH_SHORT).show();
                         }
                     } else {
-                        Log.e(TAG, "Error executing query: ", task.getException());
+                        Log.e(TAG, "Error fetching donor data: ", task.getException());
                         Toast.makeText(getContext(), "Failed to fetch donor data.", Toast.LENGTH_SHORT).show();
                     }
                 });
     }
-    private void fetchDonorDetailsAndGenerateFile(List<String> donorIds) {
-        db.collection("users")
-                .whereIn("uid", donorIds)
-                .get()
-                .addOnCompleteListener(task -> {
-                    hideProgressBar();
-                    if (task.isSuccessful()) {
-                        donors = new ArrayList<>();
-                        for (DocumentSnapshot document : task.getResult()) {
-                            donors.add(document.toObject(User.class));
-                        }
 
-                        if (!donors.isEmpty()) {
-                            generateAndDownloadFile(donors);
-                        } else {
-                            Toast.makeText(getContext(), "No donor details found.", Toast.LENGTH_SHORT).show();
-                        }
-                    } else {
-                        Log.e(TAG, "Error getting user details: ", task.getException());
-                        Toast.makeText(getContext(), "Failed to fetch donor details.", Toast.LENGTH_SHORT).show();
-                    }
-                });
-    }
-    private void generateAndDownloadFile(List<User> donors) {
-        // Choose CSV or JSON format (I'll demonstrate CSV here)
-        String fileContent = generateCsvContent(donors);
-        String filename = "donors_" + siteId + "_" + System.currentTimeMillis() + ".csv";
+    private void generateAndDownloadFile(List<Map<String, Object>> registrants) {
+        StringBuilder csvContent = new StringBuilder();
+        csvContent.append("First Name,Last Name,Email,Phone,Blood Type\n");
 
-        // Use Storage Access Framework to let the user choose the download location
+        // Add donor details to the CSV
+        for (Map<String, Object> registrant : registrants) {
+            csvContent.append(registrant.getOrDefault("firstName", "")).append(",");
+            csvContent.append(registrant.getOrDefault("lastName", "")).append(",");
+            csvContent.append(registrant.getOrDefault("email", "")).append(",");
+            csvContent.append(registrant.getOrDefault("phone", "")).append(",");
+            csvContent.append(registrant.getOrDefault("bloodType", "")).append("\n");
+        }
+
+        // Store CSV data for writing to the file
+        csvData = csvContent.toString();
+
+        // Open file save dialog
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("text/csv");
-        intent.putExtra(Intent.EXTRA_TITLE, filename);
-
+        intent.putExtra(Intent.EXTRA_TITLE, "donors_" + siteId + ".csv");
         startActivityForResult(intent, CREATE_FILE);
     }
+
 
     private String generateCsvContent(List<User> donors) {
         StringBuilder csvBuilder = new StringBuilder();
@@ -727,23 +703,23 @@ public class SiteDetailsFragment extends Fragment {
     }
 
     @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == CREATE_FILE && resultCode == Activity.RESULT_OK) {
             if (data != null && data.getData() != null) {
-                Uri uri = data.getData();
-                // Write the file content to the selected URI
-                writeCsvToFile(uri, generateCsvContent(donors)); // donors should be accessible here
+                writeCsvToFile(data.getData());
+            } else {
+                Toast.makeText(getContext(), "File creation canceled.", Toast.LENGTH_SHORT).show();
             }
         }
     }
 
-    private void writeCsvToFile(Uri uri, String content) {
-        try {
-            OutputStream outputStream = requireContext().getContentResolver().openOutputStream(uri);
+
+
+    private void writeCsvToFile(Uri uri) {
+        try (OutputStream outputStream = requireContext().getContentResolver().openOutputStream(uri)) {
             if (outputStream != null) {
-                outputStream.write(content.getBytes());
-                outputStream.close();
+                outputStream.write(csvData.getBytes());
                 Toast.makeText(getContext(), "File saved successfully.", Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(getContext(), "Failed to save file.", Toast.LENGTH_SHORT).show();
@@ -753,4 +729,5 @@ public class SiteDetailsFragment extends Fragment {
             Toast.makeText(getContext(), "Failed to save file.", Toast.LENGTH_SHORT).show();
         }
     }
+
 }
