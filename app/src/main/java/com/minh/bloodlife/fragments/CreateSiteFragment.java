@@ -315,7 +315,7 @@ public class CreateSiteFragment extends Fragment {
         // Create a map for the new site
         Map<String, Object> siteData = new HashMap<>();
         siteData.put("siteName", siteName);
-        siteData.put("siteAddress", siteAddress);
+        siteData.put("address", siteAddress);
         siteData.put("location", location);
         siteData.put("donationStartTime", donationStartTime);
         siteData.put("donationEndTime", donationEndTime);
