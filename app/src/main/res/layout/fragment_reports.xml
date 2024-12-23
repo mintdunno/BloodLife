@@ -13,7 +13,8 @@
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/startDateInput"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="69dp"
+            android:layout_marginBottom="10dp"
             android:focusable="false" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -26,6 +27,7 @@
             android:id="@+id/endDateInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
             android:focusable="false" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -34,12 +36,19 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Generate Report" />
+    <Button
+        android:id="@+id/exportReportButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Export as CSV"
+        android:layout_marginTop="8dp"/>
+
     <ProgressBar
         android:id="@+id/reportProgressBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:visibility="gone"/>
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/totalDonorsTextView"
@@ -54,10 +63,20 @@
         android:layout_height="wrap_content"
         android:text="Total Volume Collected: " />
 
+    <TableLayout
+        android:id="@+id/reportTable"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:stretchColumns="*"
+        android:layout_marginTop="16dp">
+        <!-- Table header will be added in code -->
+    </TableLayout>
+
     <TextView
         android:id="@+id/bloodTypeBreakdownTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Blood Type Breakdown: " />
+        android:text="Blood Type Breakdown: "
+        android:visibility="gone"/>
 
 </LinearLayout>

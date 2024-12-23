@@ -44,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
 
         bottomNavigationView = findViewById(R.id.bottomNavigationView);
+        // No need to find reportsMenuItem here yet
         setupBottomNavigationView();
 
         if (savedInstanceState == null) {
@@ -57,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupBottomNavigationView() {
         bottomNavigationView.setOnItemSelectedListener(item -> {
-            Fragment selectedFragment;
+            Fragment selectedFragment = null; // Initialize to null
 
             if (item.getItemId() == R.id.menu_map) {
                 selectedFragment = new MapsFragment();
@@ -69,15 +70,16 @@ public class MainActivity extends AppCompatActivity {
                 selectedFragment = new CreateSiteFragment();
             } else if (item.getItemId() == R.id.menu_reports) {
                 selectedFragment = new ReportsFragment();
+            }
+
+            if (selectedFragment != null) {
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.fragmentContainer, selectedFragment)
+                        .commit();
+                return true;
             } else {
                 return false;
             }
-
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragmentContainer, selectedFragment)
-                    .commit();
-
-            return true;
         });
     }
 
@@ -104,6 +106,7 @@ public class MainActivity extends AppCompatActivity {
         if (currentUser == null) {
             redirectToLogin();
         } else {
+            // Fetch user data and update menu
             fetchUserRoleAndUpdateMenu(currentUser.getUid());
         }
     }
@@ -116,6 +119,7 @@ public class MainActivity extends AppCompatActivity {
                         if (document != null && document.exists()) {
                             String userType = document.getString("userType");
                             Log.d(TAG, "User type: " + userType);
+                            // Update the menu before checking for Super User
                             updateNavigationBar(userType);
                         } else {
                             Log.d(TAG, "User document not found");
@@ -131,16 +135,14 @@ public class MainActivity extends AppCompatActivity {
     private void updateNavigationBar(String userType) {
         Menu menu = bottomNavigationView.getMenu();
         MenuItem createSiteItem = menu.findItem(R.id.menu_create_site);
-        MenuItem reportsItem = menu.findItem(R.id.menu_reports);
+        // Ensure the reports menu item is fetched from the menu
+        reportsMenuItem = menu.findItem(R.id.menu_reports);
 
-        // Show `menu_create_site` for Site Managers
         if (createSiteItem != null) {
             createSiteItem.setVisible("Site Manager".equals(userType));
         }
-
-        // Show `menu_reports` for Super Users
-        if (reportsItem != null) {
-            reportsItem.setVisible("Super User".equals(userType));
+        if (reportsMenuItem != null) {
+            reportsMenuItem.setVisible("Super User".equals(userType));
         }
     }
 
@@ -154,32 +156,35 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main_menu, menu);
-
-        // Find the menu item for Reports
+        // Find the menu item for Reports here, after the menu has been inflated
         reportsMenuItem = menu.findItem(R.id.menu_reports);
-
         // Fetch user role and update menu visibility
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser != null) {
             fetchUserRoleAndUpdateMenu(currentUser.getUid());
+        } else {
+            // If no user is logged in, hide the reports menu item
+            if (reportsMenuItem != null) {
+                reportsMenuItem.setVisible(false);
+            }
         }
-
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.id.home) {
+        int itemId = item.getItemId();
+        if (itemId == android.R.id.home) {
             if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
                 getSupportFragmentManager().popBackStack();
             } else {
                 finish();
             }
             return true;
-        } else if (item.getItemId() == R.id.menu_logout) {
+        } else if (itemId == R.id.menu_logout) {
             signOut();
             return true;
-        } else if (item.getItemId() == R.id.menu_reports) {
+        } else if (itemId == R.id.menu_reports) {
             ReportsFragment reportsFragment = new ReportsFragment();
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.fragmentContainer, reportsFragment)
