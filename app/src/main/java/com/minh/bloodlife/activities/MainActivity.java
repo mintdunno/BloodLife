@@ -108,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
         if (currentUser == null) {
             redirectToLogin();
         } else {
+            // Fetch user data and update menu before checking for Super User
             fetchUserRoleAndUpdateMenu(currentUser.getUid());
         }
     }
@@ -121,6 +122,8 @@ public class MainActivity extends AppCompatActivity {
                             String userType = document.getString("userType");
                             Log.d(TAG, "User type: " + userType);
                             updateNavigationBar(userType);
+                            // Check for Super User status after fetching user role
+                            checkIfSuperUser();
                         } else {
                             Log.d(TAG, "User document not found");
                             updateNavigationBar(null);
@@ -131,6 +134,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
     }
+
 
     private void updateNavigationBar(String userType) {
         Menu menu = bottomNavigationView.getMenu();

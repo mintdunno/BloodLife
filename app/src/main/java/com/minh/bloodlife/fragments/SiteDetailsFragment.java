@@ -628,12 +628,14 @@ public class SiteDetailsFragment extends Fragment {
 
         db.collection("registrations")
                 .whereEqualTo("siteId", siteId)
+                .whereEqualTo("numDonors", 1) // This ensures we are considering only the donors
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         List<String> donorIds = new ArrayList<>();
-                        for (DocumentSnapshot doc : task.getResult()) {
-                            List<Map<String, Object>> registrants = (List<Map<String, Object>>) doc.get("registrants");
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            // Assuming 'registrants' is a list of maps, and each map has a 'userId' key
+                            List<Map<String, Object>> registrants = (List<Map<String, Object>>) document.get("registrants");
                             if (registrants != null) {
                                 for (Map<String, Object> registrant : registrants) {
                                     String userId = (String) registrant.get("userId");

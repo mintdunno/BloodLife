@@ -175,14 +175,23 @@ public class ReportsFragment extends Fragment {
                 for (QueryDocumentSnapshot outcomeDoc : task.getResult()) {
                     DonationDriveOutcome outcome = outcomeDoc.toObject(DonationDriveOutcome.class);
 
+                    // Apply site filter (if a specific site is selected)
+                    // Replace "selectedSiteId" with the actual variable holding the selected site ID
+                    // if (selectedSiteId != null && !selectedSiteId.equals(outcome.getSiteId())) {
+                    //     continue; // Skip this outcome if it doesn't match the selected site
+                    // }
+
                     // Fetch registrations for this site and date
                     db.collection("registrations")
                             .whereEqualTo("siteId", outcome.getSiteId())
+                            .whereGreaterThanOrEqualTo("registrationDate", finalStartDate)
+                            .whereLessThanOrEqualTo("registrationDate", finalEndDate)
                             .get()
                             .addOnCompleteListener(registrationTask -> {
                                 if (registrationTask.isSuccessful()) {
                                     int numDonors = registrationTask.getResult().size();
-                                    totalDonors.addAndGet(numDonors);
+                                    totalDonors.addAndGet(numDonors); // Update total donors count safely
+                                    Log.d(TAG, "total donors:" + totalDonors);
                                 } else {
                                     // Handle error
                                     Log.e(TAG, "Error fetching registrations", registrationTask.getException());
@@ -192,6 +201,7 @@ public class ReportsFragment extends Fragment {
                     // Aggregate total volume
                     try {
                         totalVolume.addAndGet(Integer.parseInt(outcome.getTotalCollected()));
+                        Log.d(TAG, "total volume:" + totalVolume);
                     } catch (NumberFormatException e) {
                         Log.e(TAG, "Error parsing totalCollected", e);
                     }
@@ -201,12 +211,13 @@ public class ReportsFragment extends Fragment {
                     if (breakdown != null) {
                         for (Map.Entry<String, String> entry : breakdown.entrySet()) {
                             String bloodType = entry.getKey();
-                            int amount = Integer.parseInt(entry.getValue());
+                            int amount = Integer.parseInt(entry.getValue()); // Assuming amount is a number
 
                             // Update the total for this blood type safely
                             synchronized (bloodTypeTotals) {
                                 bloodTypeTotals.put(bloodType, bloodTypeTotals.getOrDefault(bloodType, 0) + amount);
                             }
+                            Log.d(TAG, "blood type:" + bloodTypeTotals);
                         }
                     }
                 }
