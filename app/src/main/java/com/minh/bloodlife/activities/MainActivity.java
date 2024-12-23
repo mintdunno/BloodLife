@@ -8,6 +8,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
@@ -22,8 +23,11 @@ import com.minh.bloodlife.R;
 import com.minh.bloodlife.fragments.CreateSiteFragment;
 import com.minh.bloodlife.fragments.MapsFragment;
 import com.minh.bloodlife.fragments.ProfileFragment;
+import com.minh.bloodlife.fragments.ReportsFragment;
 import com.minh.bloodlife.fragments.SearchFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -31,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
     private BottomNavigationView bottomNavigationView;
+    private MenuItem reportsMenuItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
 
         bottomNavigationView = findViewById(R.id.bottomNavigationView);
+        reportsMenuItem = bottomNavigationView.getMenu().findItem(R.id.menu_reports);
         setupBottomNavigationView();
 
         if (savedInstanceState == null) {
@@ -64,7 +70,10 @@ public class MainActivity extends AppCompatActivity {
                 selectedFragment = new ProfileFragment();
             } else if (item.getItemId() == R.id.menu_create_site) {
                 selectedFragment = new CreateSiteFragment();
-            } else {
+            } else if (item.getItemId() == R.id.menu_reports) {
+                selectedFragment = new ReportsFragment();
+            }
+            else {
                 return false;
             }
 
@@ -130,6 +139,34 @@ public class MainActivity extends AppCompatActivity {
             createSiteItem.setVisible("Site Manager".equals(userType));
         }
     }
+    private void checkIfSuperUser() {
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user != null) {
+            user.getIdToken(true)
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            Map<String, Object> claims = task.getResult().getClaims();
+                            if (reportsMenuItem != null) {
+                                if (claims.containsKey("isSuperUser") && (boolean) claims.get("isSuperUser")) {
+                                    // User is a Super User, show the reports menu item
+                                    reportsMenuItem.setVisible(true);
+                                } else {
+                                    // User is not a Super User, hide the reports menu item
+                                    reportsMenuItem.setVisible(false);
+                                }
+                            }
+                        } else {
+                            // Handle error
+                            Log.e("MainActivity", "Error getting auth claims", task.getException());
+                        }
+                    });
+        } else {
+            // User not signed in
+            if (reportsMenuItem != null) {
+                reportsMenuItem.setVisible(false); // Hide the menu item
+            }
+        }
+    }
 
     private void redirectToLogin() {
         Intent intent = new Intent(this, LoginActivity.class);
@@ -141,6 +178,13 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main_menu, menu);
+
+        // Find the menu item for Reports (if it exists) after inflating the menu
+        reportsMenuItem = menu.findItem(R.id.menu_reports);
+
+        // Call checkIfSuperUser to set the initial visibility based on user's role
+        checkIfSuperUser();
+
         return true;
     }
 
@@ -155,6 +199,13 @@ public class MainActivity extends AppCompatActivity {
             return true;
         } else if (item.getItemId() == R.id.menu_logout) {
             signOut();
+            return true;
+        } else if (item.getItemId() == R.id.menu_reports) {
+            ReportsFragment reportsFragment = new ReportsFragment();
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.fragmentContainer, reportsFragment)
+                    .addToBackStack(null)
+                    .commit();
             return true;
         }
         return super.onOptionsItemSelected(item);

@@ -15,6 +15,11 @@
         android:icon="@drawable/ic_add_location"
         android:title="Create Site"
         android:visible="false" />
+    <item
+        android:id="@+id/menu_reports"
+        android:icon="@drawable/ic_menu_rp"
+        android:title="Reports" />
+
 
     <item
         android:id="@+id/menu_profile"
