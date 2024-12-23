@@ -76,9 +76,10 @@ public class SiteDetailsFragment extends Fragment {
         db = FirebaseFirestore.getInstance();
         mAuth = FirebaseAuth.getInstance();
         currentUser = mAuth.getCurrentUser();
+
         if (getArguments() != null) {
             siteId = getArguments().getString(ARG_SITE_ID);
-            Log.d(TAG, "onCreate - siteId: " + siteId);
+            Log.d("SiteDetailsFragment", "onCreate - siteId: " + siteId);
         }
     }
 
@@ -254,26 +255,23 @@ public class SiteDetailsFragment extends Fragment {
                     if (task.isSuccessful()) {
                         QuerySnapshot querySnapshot = task.getResult();
                         if (querySnapshot != null && !querySnapshot.isEmpty()) {
-                            // User is already a volunteer at a site
                             DocumentSnapshot document = querySnapshot.getDocuments().get(0);
                             Registration existingRegistration = document.toObject(Registration.class);
+                            Log.d("SiteDetailsFragment", "Existing Registration: " + existingRegistration);
                             if (existingRegistration != null) {
                                 String existingSiteId = existingRegistration.getSiteId();
+                                Log.d("SiteDetailsFragment", "Existing siteId: " + existingSiteId);
                                 if (!existingSiteId.equals(siteId)) {
-                                    // User is volunteering at a different site, ask for confirmation to switch
                                     showVolunteerConfirmationDialog(userId, existingSiteId, document.getId());
                                 } else {
-                                    // User is already registered at this site, show a message
                                     Toast.makeText(getContext(), "You are already registered as a volunteer for this site.", Toast.LENGTH_SHORT).show();
                                 }
                             }
                         } else {
-                            // User is not registered as a volunteer at any site, proceed with registration
-                            handleRegisterAsVolunteer();
+                            handleRegisterAsVolunteer(); // Proceed with new registration
                         }
                     } else {
-                        Log.e(TAG, "Error checking for existing volunteer registration", task.getException());
-                        Toast.makeText(getContext(), "Error checking registration status.", Toast.LENGTH_SHORT).show();
+                        Log.e("SiteDetailsFragment", "Error checking for existing volunteer registration", task.getException());
                     }
                 });
     }
@@ -310,17 +308,17 @@ public class SiteDetailsFragment extends Fragment {
 
     private void updateExistingRegistration(String registrationId, String siteId) {
         Map<String, Object> updates = new HashMap<>();
-        updates.put("siteId", siteId); // Update the site ID
-        updates.put("registrationDate", new Date()); // Update the registration date
+        updates.put("siteId", siteId);
+        updates.put("registrationDate", new Date());
 
         db.collection("registrations").document(registrationId)
                 .update(updates)
                 .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Registration updated successfully.");
+                    Log.d("SiteDetailsFragment", "Registration updated successfully - siteId: " + siteId);
                     Toast.makeText(getContext(), "Your volunteer registration has been updated to this site.", Toast.LENGTH_SHORT).show();
                 })
                 .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error updating registration", e);
+                    Log.e("SiteDetailsFragment", "Error updating registration", e);
                     Toast.makeText(getContext(), "Failed to update registration: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
@@ -328,6 +326,7 @@ public class SiteDetailsFragment extends Fragment {
 
     private void handleRegisterAsVolunteer() {
         String userId = mAuth.getCurrentUser().getUid();
+        Log.d("SiteDetailsFragment", "Registering new volunteer - userId: " + userId + ", siteId: " + siteId);
         if (userId != null) {
             registerForEvent(userId, siteId, true, 0);
         } else {
@@ -336,10 +335,11 @@ public class SiteDetailsFragment extends Fragment {
     }
 
     private void registerForEvent(String userId, String siteId, boolean isVolunteer, int numDonors) {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        Log.d("SiteDetailsFragment", "Registering volunteer - userId: " + userId + ", siteId: " + siteId);
+
         Map<String, Object> registration = new HashMap<>();
-        registration.put("userId", userId);
-        registration.put("siteId", siteId);
+        registration.put("userId", userId); // Save the userId
+        registration.put("siteId", siteId); // Save the siteId
         registration.put("registrationDate", new Date());
         registration.put("isVolunteer", isVolunteer);
         registration.put("numDonors", numDonors);
@@ -347,14 +347,16 @@ public class SiteDetailsFragment extends Fragment {
         db.collection("registrations")
                 .add(registration)
                 .addOnSuccessListener(documentReference -> {
+                    Log.d("SiteDetailsFragment", "Registration successful: " + documentReference.getId());
                     Toast.makeText(getContext(), "Registration successful", Toast.LENGTH_SHORT).show();
                     disableRegistrationButtons();
                 })
                 .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error adding registration", e);
+                    Log.e("SiteDetailsFragment", "Error adding registration", e);
                     Toast.makeText(getContext(), "Registration failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
+
 
     private Button createStyledButton(String text) {
         Button button = new Button(getContext());
