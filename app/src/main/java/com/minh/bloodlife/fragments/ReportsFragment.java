@@ -71,32 +71,8 @@ public class ReportsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        checkIfSuperUser();
-    }
-
-    private void checkIfSuperUser() {
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user != null) {
-            user.getIdToken(true)
-                    .addOnCompleteListener(task -> {
-                        if (task.isSuccessful()) {
-                            Map<String, Object> claims = task.getResult().getClaims();
-                            if (claims.containsKey("isSuperUser") && (boolean) claims.get("isSuperUser")) {
-                                // User is a Super User, show content
-                                // (Enable input fields/buttons if needed)
-                            } else {
-                                // User is not a Super User, show error message or redirect
-                                Toast.makeText(getContext(), "You are not authorized to view this page.", Toast.LENGTH_SHORT).show();
-                                // TODO: Redirect to another fragment or handle as needed
-                            }
-                        } else {
-                            // Handle error
-                            Log.e(TAG, "Error getting auth claims", task.getException());
-                        }
-                    });
-        } else {
-            // User not signed in, handle accordingly (e.g., redirect to login)
-        }
+        // Removed the check for Super User here. We will only make the "Reports" menu item
+        // visible to Super Users, so there's no need for an extra check here.
     }
 
     private void showDatePicker(boolean isStartDate) {
@@ -170,18 +146,20 @@ public class ReportsFragment extends Fragment {
         // 4. Execute the query
         final Date finalStartDate = startDate;
         final Date finalEndDate = endDate;
+
         query.get().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
+                int outcomeCount = task.getResult().size(); // Get the number of outcome documents
+                if (outcomeCount == 0) {
+                    // No data to display, update UI directly
+                    updateUI(totalDonors.get(), totalVolume.get(), bloodTypeTotals);
+                    return;
+                }
+                AtomicInteger completedCount = new AtomicInteger(0); // Counter for completed inner tasks
+
                 for (QueryDocumentSnapshot outcomeDoc : task.getResult()) {
                     DonationDriveOutcome outcome = outcomeDoc.toObject(DonationDriveOutcome.class);
 
-                    // Apply site filter (if a specific site is selected)
-                    // Replace "selectedSiteId" with the actual variable holding the selected site ID
-                    // if (selectedSiteId != null && !selectedSiteId.equals(outcome.getSiteId())) {
-                    //     continue; // Skip this outcome if it doesn't match the selected site
-                    // }
-
-                    // Fetch registrations for this site and date
                     db.collection("registrations")
                             .whereEqualTo("siteId", outcome.getSiteId())
                             .whereGreaterThanOrEqualTo("registrationDate", finalStartDate)
@@ -190,58 +168,58 @@ public class ReportsFragment extends Fragment {
                             .addOnCompleteListener(registrationTask -> {
                                 if (registrationTask.isSuccessful()) {
                                     int numDonors = registrationTask.getResult().size();
-                                    totalDonors.addAndGet(numDonors); // Update total donors count safely
-                                    Log.d(TAG, "total donors:" + totalDonors);
+                                    totalDonors.addAndGet(numDonors);
                                 } else {
-                                    // Handle error
                                     Log.e(TAG, "Error fetching registrations", registrationTask.getException());
                                 }
+
+                                // Aggregate total volume (no change needed here)
+                                try {
+                                    totalVolume.addAndGet(Integer.parseInt(outcome.getTotalCollected()));
+                                } catch (NumberFormatException e) {
+                                    Log.e(TAG, "Error parsing totalCollected", e);
+                                }
+
+                                // Aggregate blood type breakdown (no change needed here)
+                                Map<String, String> breakdown = outcome.getBloodTypeBreakdown();
+                                if (breakdown != null) {
+                                    for (Map.Entry<String, String> entry : breakdown.entrySet()) {
+                                        String bloodType = entry.getKey();
+                                        int amount = Integer.parseInt(entry.getValue());
+                                        synchronized (bloodTypeTotals) {
+                                            bloodTypeTotals.put(bloodType, bloodTypeTotals.getOrDefault(bloodType, 0) + amount);
+                                        }
+                                    }
+                                }
+
+                                // Check if all inner tasks are completed
+                                if (completedCount.incrementAndGet() == outcomeCount) {
+                                    // Update the UI on the main thread
+                                    requireActivity().runOnUiThread(() -> {
+                                        updateUI(totalDonors.get(), totalVolume.get(), bloodTypeTotals);
+                                    });
+                                }
                             });
-
-                    // Aggregate total volume
-                    try {
-                        totalVolume.addAndGet(Integer.parseInt(outcome.getTotalCollected()));
-                        Log.d(TAG, "total volume:" + totalVolume);
-                    } catch (NumberFormatException e) {
-                        Log.e(TAG, "Error parsing totalCollected", e);
-                    }
-
-                    // Aggregate blood type breakdown
-                    Map<String, String> breakdown = outcome.getBloodTypeBreakdown();
-                    if (breakdown != null) {
-                        for (Map.Entry<String, String> entry : breakdown.entrySet()) {
-                            String bloodType = entry.getKey();
-                            int amount = Integer.parseInt(entry.getValue()); // Assuming amount is a number
-
-                            // Update the total for this blood type safely
-                            synchronized (bloodTypeTotals) {
-                                bloodTypeTotals.put(bloodType, bloodTypeTotals.getOrDefault(bloodType, 0) + amount);
-                            }
-                            Log.d(TAG, "blood type:" + bloodTypeTotals);
-                        }
-                    }
                 }
-
-                // 5. Update the UI (must be done on the main thread)
-                requireActivity().runOnUiThread(() -> {
-                    totalDonorsTextView.setText("Total Donors: " + totalDonors.get());
-                    totalVolumeTextView.setText("Total Volume Collected: " + totalVolume.get() + " ml");
-
-                    // Format and display blood type breakdown
-                    StringBuilder breakdownBuilder = new StringBuilder("Blood Type Breakdown:\n");
-                    for (Map.Entry<String, Integer> entry : bloodTypeTotals.entrySet()) {
-                        breakdownBuilder.append(entry.getKey()).append(": ").append(entry.getValue()).append(" ml\n");
-                    }
-                    bloodTypeBreakdownTextView.setText(breakdownBuilder.toString());
-
-                    reportProgressBar.setVisibility(View.GONE); // Hide progress bar
-                });
-
             } else {
-                reportProgressBar.setVisibility(View.GONE); // Hide progress bar
+                reportProgressBar.setVisibility(View.GONE);
                 Log.e(TAG, "Error getting documents: ", task.getException());
                 Toast.makeText(getContext(), "Error generating report.", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    // Update the UI on the main thread
+    private void updateUI(int totalDonors, int totalVolume, Map<String, Integer> bloodTypeTotals) {
+        totalDonorsTextView.setText("Total Donors: " + totalDonors);
+        totalVolumeTextView.setText("Total Volume Collected: " + totalVolume + " ml");
+
+        StringBuilder breakdownBuilder = new StringBuilder("Blood Type Breakdown:\n");
+        for (Map.Entry<String, Integer> entry : bloodTypeTotals.entrySet()) {
+            breakdownBuilder.append(entry.getKey()).append(": ").append(entry.getValue()).append(" ml\n");
+        }
+        bloodTypeBreakdownTextView.setText(breakdownBuilder.toString());
+
+        reportProgressBar.setVisibility(View.GONE);
     }
 }
